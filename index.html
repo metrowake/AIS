@@ -1,0 +1,1024 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
+<title>Quaderno di Degustazione</title>
+<meta name="description" content="Quaderno di degustazione AIS: scheda analitico-descrittiva, scheda a punti, diario e guida ai termini. Funziona offline sul telefono.">
+<meta name="theme-color" content="#f2f4f5" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#111518" media="(prefers-color-scheme: dark)">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Quaderno">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:opsz,wght@6..96,500;6..96,700&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* App a colonna singola pensata per il telefono, barra in basso per navigare.
+   Codici colore presi dalla scheda AIS: ardesia per le fasi, magenta per i giudizi,
+   verde per l'effervescenza, prugna per la consistenza. */
+:root{
+  --bg:#f2f4f5; --surface:#ffffff; --surface-2:#e8ecee; --ink:#1b2226; --muted:#56626a; --line:#d5dbdf;
+  --slate:#55626a; --on-slate:#ffffff;
+  --mag:#b3266b; --mag-soft:#f7dce8; --mag-mid:#d77aa5; --on-mag:#ffffff;
+  --lime:#6f8f22; --lime-soft:#e5efcc;
+  --plum:#6e3f78; --plum-soft:#eadcef;
+  --danger:#b3261e;
+  --shadow:0 1px 2px rgba(20,30,35,.06),0 6px 20px rgba(20,30,35,.07);
+  --f-display:"Bodoni Moda","Didot","Bodoni 72",Georgia,serif;
+  --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --r:16px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111518; --surface:#1a2024; --surface-2:#232b30; --ink:#e9edef; --muted:#a6b1b7; --line:#2f393f;
+    --slate:#3d4a52; --on-slate:#f2f5f6;
+    --mag:#e86aa3; --mag-soft:#3b1d2c; --mag-mid:#a84a77; --on-mag:#1a0d13;
+    --lime:#a8c95a; --lime-soft:#28321a;
+    --plum:#c193cc; --plum-soft:#2f2234;
+    --danger:#f08a80;
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 20px rgba(0,0,0,.3);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111518; --surface:#1a2024; --surface-2:#232b30; --ink:#e9edef; --muted:#a6b1b7; --line:#2f393f;
+  --slate:#3d4a52; --on-slate:#f2f5f6;
+  --mag:#e86aa3; --mag-soft:#3b1d2c; --mag-mid:#a84a77; --on-mag:#1a0d13;
+  --lime:#a8c95a; --lime-soft:#28321a;
+  --plum:#c193cc; --plum-soft:#2f2234;
+  --danger:#f08a80;
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 20px rgba(0,0,0,.3);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;background:var(--bg);overscroll-behavior-y:none;padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;overscroll-behavior-y:none;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  padding-block:0 calc(76px + env(safe-area-inset-bottom,0px))}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:40;background:var(--bg)}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+button,.nav,.stepbar,.steps,.chips,.votes,.seg,.pill{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+:focus-visible{outline:3px solid var(--mag);outline-offset:2px}
+h1,h2,h3{margin:0;line-height:1.15;text-wrap:balance}
+.wrap{max-width:760px;margin:0 auto}
+.num{font-variant-numeric:tabular-nums}
+img{max-width:100%}
+
+/* barra alta */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;background:var(--bg);display:flex;align-items:center;gap:8px;padding-block:8px 6px}
+.top h1{font-family:var(--f-display);font-weight:700;font-size:23px;letter-spacing:-.01em;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.iconbtn{width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--surface);display:grid;place-items:center;flex:none}
+.iconbtn svg{width:19px;height:19px}
+.status{font-size:14px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}
+.status i{width:9px;height:9px;border-radius:50%;background:var(--lime);display:inline-block}
+.status.busy i{background:var(--mag-mid)}
+.status.local i{background:var(--danger)}
+
+/* navigazione in basso */
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:35;background:var(--surface);border-top:1px solid var(--line);
+  padding:5px max(16px,env(safe-area-inset-right,0px)) calc(5px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.nav .in{max-width:760px;margin:0 auto;display:flex;gap:6px}
+.nav button{flex:1;border:0;background:transparent;border-radius:12px;padding:5px 4px;display:flex;flex-direction:column;align-items:center;gap:2px;font-weight:600;font-size:13px;color:var(--muted);min-height:48px}
+.nav button svg{width:22px;height:22px}
+.nav button.on{color:var(--mag);background:var(--mag-soft)}
+.fab{position:fixed;z-index:36;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(68px + env(safe-area-inset-bottom,0px));
+  border:0;background:var(--mag);color:var(--on-mag);font-weight:700;font-size:16px;border-radius:999px;padding:12px 18px;box-shadow:var(--shadow);display:flex;gap:8px;align-items:center}
+@media (min-width:820px){ .fab{right:calc(50% - 380px)} }
+@media (pointer:coarse){ body.kb .nav, body.kb .stepbar, body.kb .fab{display:none} body.kb{padding-bottom:24px} }
+
+/* cantina */
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+.tile{background:var(--surface);border-radius:12px;padding:8px 12px;box-shadow:var(--shadow);min-width:0}
+.tile .k{font-size:14px;color:var(--muted);font-weight:600}
+.tile .v{font-family:var(--f-display);font-weight:700;font-size:24px;line-height:1.1}
+.search{width:100%;padding:10px 14px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-size:16px;-webkit-appearance:none;appearance:none}
+.filters{display:flex;gap:6px;overflow-x:auto;padding-block:8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.filters::-webkit-scrollbar{display:none}
+.pill{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 12px;font-weight:600;font-size:15px;display:inline-flex;gap:7px;align-items:center;min-height:36px}
+.pill.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.month{font-weight:700;color:var(--muted);font-size:14px;letter-spacing:.06em;text-transform:uppercase;margin:12px 4px 6px}
+.wcard{width:100%;text-align:left;display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;background:var(--surface);border:0;border-radius:12px;padding:10px 12px;box-shadow:var(--shadow);margin-bottom:8px;color:inherit}
+.wcard:active{transform:scale(.99)}
+.wcard .nm{font-family:var(--f-display);font-weight:700;font-size:18px;line-height:1.15;overflow-wrap:anywhere}
+.wcard .sub{color:var(--muted);font-size:15px;overflow-wrap:anywhere}
+.wcard .mn{min-width:0}
+.glass{width:44px;height:44px;border-radius:50%;position:relative;flex:none;display:block;object-fit:cover;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12),inset -6px -8px 14px rgba(0,0,0,.18),inset 6px 6px 12px rgba(255,255,255,.35)}
+.glass.big{width:56px;height:56px}
+img.glass{box-shadow:0 0 0 1px rgba(0,0,0,.12)}
+.glass .fx{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 50% 50%,transparent 1.5px,rgba(255,255,255,.55) 2px,transparent 2.6px) 0 0/9px 12px;opacity:.7}
+.score{text-align:right}
+.score b{font-family:var(--f-display);font-size:22px;line-height:1;display:block}
+.cls{display:inline-block;border-radius:999px;padding:2px 9px;font-size:14px;font-weight:700;white-space:nowrap}
+.c-accettabile{background:var(--surface-2);color:var(--ink)}
+.c-buono{background:var(--mag-soft);color:var(--mag)}
+.c-distinto{background:var(--mag-mid);color:var(--on-mag)}
+.c-ottimo{background:var(--mag);color:var(--on-mag)}
+.c-eccellente{background:var(--ink);color:var(--bg)}
+.c-none{background:var(--surface-2);color:var(--muted)}
+.empty{background:var(--surface);border-radius:var(--r);padding:20px 16px;box-shadow:var(--shadow);text-align:center}
+.empty h2{font-family:var(--f-display);font-size:22px;margin-bottom:8px}
+.empty p{color:var(--muted);margin:0 0 16px}
+
+/* scheda vino */
+.hero{display:flex;gap:12px;align-items:center;margin-bottom:6px}
+.hero .t{min-width:0;flex:1}
+.hero h2{font-family:var(--f-display);font-weight:700;font-size:21px;overflow-wrap:anywhere}
+.hero .sub{color:var(--muted);font-size:15px}
+.hero button.photo{border:0;padding:0;background:none;flex:none}
+.ring{flex:none;text-align:center}
+.ring b{font-family:var(--f-display);font-size:28px;line-height:1;display:block}
+.steps{position:sticky;top:calc(env(safe-area-inset-top,0px) + 52px);z-index:25;background:var(--bg);display:flex;gap:5px;overflow-x:auto;padding-block:4px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.steps::-webkit-scrollbar{display:none}
+.steps button{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 11px;font-weight:600;font-size:15px;display:flex;align-items:center;gap:6px;min-height:36px}
+.steps button.on{background:var(--slate);color:var(--on-slate);border-color:var(--slate)}
+.steps .dn{width:7px;height:7px;border-radius:50%;background:var(--line)}
+.steps .dn.ok{background:var(--lime)}
+.band{background:var(--slate);color:var(--on-slate);border-radius:12px 12px 0 0;padding:7px 12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;font-size:14px;display:flex;justify-content:space-between;gap:10px}
+.panel{background:var(--surface);border-radius:0 0 12px 12px;box-shadow:var(--shadow);padding:2px 12px 10px;margin-bottom:12px}
+.panel.solo{border-radius:12px;padding:12px}
+.voce{padding:9px 0;border-bottom:1px solid var(--line)}
+.voce:last-child{border-bottom:0}
+.vh{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+.vh h3{font-size:16px;font-weight:700}
+.vh .tag{font-size:14px;color:var(--muted);font-weight:500}
+.info{width:28px;height:28px;border-radius:50%;border:1px solid var(--line);background:var(--surface-2);font-family:var(--f-display);font-weight:700;font-size:14px;display:grid;place-items:center;flex:none;color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 11px;font-size:15px;font-weight:500;display:inline-flex;align-items:center;gap:6px;min-height:38px;white-space:nowrap}
+.chip:active{transform:scale(.97)}
+.chip .sw{width:14px;height:14px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.chip.on{background:var(--slate);color:var(--on-slate);border-color:var(--slate);font-weight:700}
+.voce.giud .chip.on{background:var(--mag);border-color:var(--mag);color:var(--on-mag)}
+.voce.bolle .chip.on{background:var(--lime);border-color:var(--lime);color:#14200a}
+.voce.cons .chip.on{background:var(--plum);border-color:var(--plum);color:var(--bg)}
+.voce.giud .vh h3{color:var(--mag)}
+.note{background:var(--surface-2);border-radius:12px;padding:8px 12px;color:var(--ink);font-size:15px;margin:8px 0 2px}
+.field{display:flex;flex-direction:column;gap:4px;margin-bottom:10px}
+.field span{font-weight:600;font-size:15px}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:10px;padding:9px 12px;font-size:16px;-webkit-appearance:none;appearance:none}
+.field input[type=date]{min-height:42px}
+.field textarea{min-height:90px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:6px}
+.seg button{border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 4px;font-weight:600;font-size:15px;display:flex;flex-direction:column;align-items:center;gap:4px;min-height:44px}
+.seg button.on{border-color:var(--slate);background:var(--slate);color:var(--on-slate)}
+.seg .sw{width:16px;height:16px;border-radius:50%;box-shadow:inset 0 0 0 1px rgba(0,0,0,.15)}
+.photo{display:flex;gap:12px;align-items:center}
+.photo img{width:88px;height:88px;object-fit:cover;border-radius:12px;box-shadow:var(--shadow)}
+.timer{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+.timer .btn{min-width:150px}
+.timer .btn.run{background:var(--mag);border-color:var(--mag);color:var(--on-mag)}
+.timer .sec{font-family:var(--f-display);font-weight:700;font-size:22px;min-width:64px}
+.timer small{color:var(--muted);font-size:14px;flex-basis:100%}
+
+/* punteggio */
+.prow{display:grid;grid-template-columns:1fr auto;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.prow:last-child{border-bottom:0}
+.prow .nmc{min-width:0;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.prow .nmc h3{font-size:15px;font-weight:600;line-height:1.25}
+.peso{font-size:13px;font-weight:700;background:var(--surface-2);border-radius:999px;padding:1px 7px;white-space:nowrap}
+.votes{display:grid;grid-template-columns:repeat(4,42px);gap:5px}
+.votes button{border:1.5px solid var(--line);background:var(--surface);border-radius:9px;height:42px;font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+.votes button.on{background:var(--mag);border-color:var(--mag);color:var(--on-mag)}
+.total{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);padding:12px;margin-bottom:12px}
+.total .row{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.total .big{font-family:var(--f-display);font-weight:700;font-size:44px;line-height:.95}
+.rapido{margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.rapido h3{font-size:16px;margin-bottom:4px}
+.rapido ol{margin:0;padding-left:22px;font-size:15px}
+.rapido li{margin:3px 0}
+.phases{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px}
+.phases div{background:var(--surface-2);border-radius:10px;padding:6px 8px;font-size:14px;min-width:0}
+.phases b{display:block;font-size:16px}
+@media (max-width:520px){ .phases{grid-template-columns:1fr 1fr} }
+.descr{font-family:var(--f-display);font-size:17px;line-height:1.5}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 14px;font-weight:700;font-size:15px;min-height:42px}
+.btn.primary{background:var(--mag);border-color:var(--mag);color:var(--on-mag)}
+.btn.danger{color:var(--danger)}
+.btn.block{width:100%}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+
+/* barra passi in basso */
+.stepbar{position:fixed;left:0;right:0;bottom:0;z-index:35;background:var(--surface);border-top:1px solid var(--line);
+  padding:6px max(16px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.stepbar .in{max-width:760px;margin:0 auto;display:grid;grid-template-columns:44px 1fr 44px;gap:10px;align-items:center}
+.stepbar .mid{text-align:center;min-width:0}
+.stepbar .mid b{display:block;font-size:15px}
+.stepbar .mid span{color:var(--muted);font-size:14px}
+.stepbar .iconbtn{width:44px;height:44px}
+
+/* diario */
+.card{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);padding:12px;margin-bottom:10px}
+.card h2{font-family:var(--f-display);font-size:19px;margin-bottom:8px}
+.bars{display:flex;flex-direction:column;gap:10px}
+.bar{display:grid;grid-template-columns:100px 1fr 50px;gap:10px;align-items:center;font-size:15px}
+.bar .tr{height:12px;background:var(--surface-2);border-radius:999px;overflow:hidden}
+.bar .fl{height:100%;border-radius:999px;background:var(--mag)}
+.bar .vv{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.months{display:grid;grid-template-columns:repeat(12,1fr);gap:4px;align-items:end;height:100px;padding-top:18px}
+.months .m{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;min-width:0}
+.months .col{width:100%;max-width:26px;background:var(--slate);border-radius:6px 6px 2px 2px;min-height:2px;position:relative}
+.months .col.has{background:var(--mag)}
+.months .col span{position:absolute;top:-21px;left:50%;transform:translateX(-50%);font-size:14px;font-weight:700}
+.months .lb{font-size:14px;color:var(--muted)}
+.rank{display:flex;flex-direction:column}
+.rank button{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;text-align:left;background:none;border:0;border-bottom:1px solid var(--line);padding:10px 0;color:inherit}
+.rank button:last-child{border-bottom:0}
+.rank .pos{font-family:var(--f-display);font-weight:700;font-size:20px;color:var(--muted)}
+
+/* guida */
+.guide p{margin:0 0 12px}
+.guide h2{font-family:var(--f-display);font-size:21px;margin:6px 0 10px}
+details{background:var(--surface);border-radius:12px;box-shadow:var(--shadow);margin-bottom:8px;overflow:hidden}
+summary{list-style:none;padding:12px;font-weight:700;font-size:16px;display:flex;justify-content:space-between;gap:10px;align-items:center;cursor:pointer}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+";font-family:var(--f-display);font-size:26px;line-height:1;color:var(--mag)}
+details[open] summary::after{content:"–"}
+details .bd{padding:0 12px 12px}
+.tbl{width:100%;border-collapse:collapse;margin:6px 0 14px;font-variant-numeric:tabular-nums}
+.tbl th{background:var(--slate);color:var(--on-slate);text-align:left;padding:7px 10px;font-size:15px}
+.tbl td{padding:7px 10px;border-bottom:1px solid var(--line);font-size:15px}
+.tscroll{overflow-x:auto}
+.termlist{display:flex;flex-direction:column;gap:2px}
+.termlist div{padding:8px 0;border-bottom:1px dashed var(--line)}
+.termlist div:last-child{border-bottom:0}
+.termlist b{display:block}
+.src a{color:var(--mag);overflow-wrap:anywhere}
+
+/* foglio informativo */
+.scrim{position:fixed;inset:0;z-index:60;background:rgba(10,14,16,.45);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);width:100%;max-width:640px;max-height:86vh;max-height:86dvh;overflow:auto;border-radius:22px 22px 0 0;
+  padding:10px max(18px,env(safe-area-inset-right,0px)) calc(22px + env(safe-area-inset-bottom,0px)) max(18px,env(safe-area-inset-left,0px));box-shadow:0 -10px 40px rgba(0,0,0,.25);touch-action:pan-y}
+.sheet .grab{width:44px;height:5px;border-radius:9px;background:var(--line);margin:4px auto 14px}
+.sheet h2{font-family:var(--f-display);font-size:22px;margin-bottom:8px}
+.sheet .lead{margin:0 0 14px}
+.sheet .opt{display:block;width:100%;text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:12px;padding:9px 12px;margin-bottom:6px;color:inherit}
+.sheet .opt b{display:flex;align-items:center;gap:8px;font-size:16px}
+.sheet .opt span{display:block;color:var(--muted);font-size:15px;margin-top:2px}
+.sheet .opt.on{border-color:var(--mag);background:var(--mag-soft)}
+.sheet .btn{margin-bottom:6px}
+.sheet .hint{color:var(--muted);font-size:14px;margin:4px 0 12px}
+.sheet ol{padding-left:20px;margin:0 0 12px}
+@media (min-width:700px){ .scrim{align-items:center} .sheet{border-radius:22px;padding-bottom:22px} }
+.tip{position:fixed;z-index:70;max-width:320px;background:var(--ink);color:var(--bg);padding:10px 12px;border-radius:10px;font-size:15px;line-height:1.4;pointer-events:none;box-shadow:var(--shadow)}
+.toast{position:fixed;z-index:80;left:50%;transform:translateX(-50%);bottom:calc(90px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:12px;font-weight:600;box-shadow:var(--shadow);max-width:calc(100% - 32px);display:flex;gap:12px;align-items:center}
+.toast button{border:0;background:var(--mag);color:var(--on-mag);border-radius:8px;padding:6px 10px;font-weight:700;white-space:nowrap}
+.banner{background:var(--mag-soft);color:var(--ink);border-radius:12px;padding:9px 12px;margin-bottom:10px;font-size:15px;display:flex;gap:10px;align-items:center}
+.banner span{flex:1}
+.banner button{border:0;background:transparent;color:var(--mag);font-weight:700;padding:6px 4px}
+
+@media (prefers-reduced-motion:no-preference){
+  .sheet{animation:up .22s ease-out}
+  @keyframes up{from{transform:translateY(30px);opacity:.4}to{transform:none;opacity:1}}
+  #stepBody.slide-l{animation:sl .18s ease-out} #stepBody.slide-r{animation:sr .18s ease-out}
+  @keyframes sl{from{transform:translateX(24px);opacity:.3}to{transform:none;opacity:1}}
+  @keyframes sr{from{transform:translateX(-24px);opacity:.3}to{transform:none;opacity:1}}
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="app" aria-live="polite">
+  <header class="top"><h1>Cantina</h1></header>
+  <div class="empty"><h2>Sto aprendo il quaderno</h2><p>I tuoi vini compaiono qui tra un istante.</p></div>
+</div>
+<input type="file" id="fileImport" accept=".json,application/json" hidden>
+<input type="file" id="fotoIn" accept="image/*" hidden>
+
+<script>
+const APP_VERSION="1.0.0";
+/* ================== TERMINOLOGIA: SCHEDA ANALITICO-DESCRITTIVA AIS ================== */
+const SW = { // tinte indicative per i campioni di colore
+  verdolino:"#dfe49a", paglierino:"#efdc7c", dorato:"#e4b947", ambrato:"#c98a32", mogano:"#6f321d",
+  "fiore di pesco":"#f7d9d0", ramato:"#e3a283", salmone:"#f09682", corallo:"#e86a5c", peonia:"#cf3f68",
+  amaranto:"#7a1238", rubino:"#981a31", carminio:"#b0102b", granato:"#74261f", aranciato:"#8e4425"
+};
+const COLORI = {
+  bianco:[["verdolino","Giallo con riflessi verdi. Bianchi giovanissimi, da uve raccolte presto o di climi freschi."],
+    ["paglierino","Il giallo della paglia. Il colore più comune dei bianchi giovani."],
+    ["dorato","Giallo carico come l'oro. Bianchi evoluti, affinati in legno, macerati o da vendemmia tardiva."],
+    ["ambrato","Giallo che vira all'arancio bruno. Bianchi molto evoluti, passiti, vini ossidativi."],
+    ["mogano","Bruno rossastro scuro. Vini dolci o ossidativi di lunghissimo affinamento, come vecchi Marsala e Vin Santo."]],
+  rosa:[["fiore di pesco","Rosa pallidissimo, quasi trasparente. Rosa da pressatura diretta con brevissimo contatto con le bucce."],
+    ["ramato","Rosa con riflessi color rame. Tipico dei rosa da uve a buccia grigia, come il Pinot grigio ramato."],
+    ["salmone","Rosa con una sfumatura aranciata, come la carne del salmone."],
+    ["corallo","Rosa vivo e brillante con una punta di rosso arancio."],
+    ["peonia","Il rosa più carico della scala, vicino a un rosso chiaro, da macerazione più lunga."]],
+  rosso:[["amaranto","Rosso con riflessi violacei. Rossi giovanissimi, con antociani ancora liberi e abbondanti."],
+    ["rubino","Rosso vivo come la pietra. Rossi giovani o di media evoluzione."],
+    ["carminio","Rosso pieno e saturo, senza riflessi viola né aranciati: sta fra rubino e granato."],
+    ["granato","Rosso con riflessi aranciati sull'unghia. Rossi evoluti, con lungo affinamento."],
+    ["aranciato","Rosso con forti toni arancio bruni. Rossi molto vecchi o al termine della loro evoluzione."]]
+};
+const QUAL = [["accettabile","Corretto, senza difetti, ma poco personale. Classe di punteggio 70 - 79,9."],
+  ["buono","Pulito e piacevole, di discreta finezza. Classe 80 - 84,9."],
+  ["distinto","Elegante e ben caratterizzato, sopra la media della sua categoria. Classe 85 - 89,9."],
+  ["ottimo","Grande finezza ed espressività. Classe 90 - 93,9."],
+  ["eccellente","Un riferimento per la sua categoria. Classe 94 - 100."]];
+
+const FASI = [
+ {id:"vista", nome:"Vista", band:"Esame visivo", voci:[
+  {id:"limpidezza", nome:"Limpidezza", def:"Quanto il vino è privo di particelle in sospensione. Dipende da filtrazioni, chiarifiche e stabilizzazioni. Velato oggi non è automaticamente un difetto: in un vino non filtrato può essere una scelta coerente con lo stile.",
+   t:[["velato","Lieve opalescenza, particelle appena visibili in controluce."],["abbastanza limpido","Qualche minima particella o un leggero velo."],["limpido","Nessuna particella visibile."],["cristallino","Trasparenza totale, come il cristallo."],["brillante","Cristallino e capace di riflettere vivamente la luce: spesso indica buona acidità."]]},
+  {id:"colore", nome:"Colore", colore:true, def:"La tonalità, data dai polifenoli: antociani nei rossi, flavonoidi nei bianchi. Racconta età e vinificazione. Con il tempo i bianchi si scuriscono per ossidazione verso dorato e ambrato; nei rossi gli antociani si legano ai tannini e il colore scivola dal violaceo verso granato e aranciato. Si osserva soprattutto sull'unghia, il bordo del vino inclinando il bicchiere."},
+  {id:"consistenza", nome:"Consistenza", soloFermi:true, cls:"cons", def:"La resistenza del vino a scorrere sulla parete: archetti e lacrime. Il principio fisico è l'effetto Marangoni. Sul velo di vino l'alcol evapora più in fretta dell'acqua, la tensione superficiale cresce in alto e richiama liquido, che poi ricade in lacrime. Conta soprattutto l'alcol, poi glicerina e zuccheri. Si valuta solo nei vini fermi.",
+   t:[["scorrevole","Scende veloce, archetti larghi e lacrime rade: vini leggeri, poco alcolici."],["consistente","Archetti fitti e lacrime lente: buona dotazione di alcol e glicerina."],["viscoso","Scende quasi oleoso: passiti, liquorosi, vini ricchissimi di zuccheri e alcol."]]},
+  {id:"bol_catenelle", nome:"Numero catenelle", soloBolle:true, cls:"bolle", def:"Le file di bollicine che salgono dai punti di nucleazione, cioè le microscopiche imperfezioni del vetro dove la CO2 disciolta si libera. Più catenelle continue indicano più gas ben integrato.",
+   t:[["scarse","Poche file, spesso intermittenti."],["mediamente numerose","Un numero discreto di file regolari."],["numerose","Molte file fitte e continue."]]},
+  {id:"bol_ascesa", nome:"Velocità ascesa", soloBolle:true, cls:"bolle", def:"Quanto in fretta salgono le bollicine. Una bolla piccola sale più lenta perché la spinta di Archimede cresce col volume, più in fretta dell'attrito. Un'ascesa lenta va quindi di solito insieme a una grana fine.",
+   t:[["rapida","Salgono veloci: bolle grandi o CO2 poco integrata."],["media","Ascesa regolare."],["lenta","Salgono lente: bolle piccole e gas ben integrato, spesso dopo lunga sosta sui lieviti."]]},
+  {id:"bol_grana", nome:"Grana bollicine", soloBolle:true, cls:"bolle", def:"La dimensione delle bollicine. Più sono fini, più la spuma è cremosa. Le bolle fini sono tipiche di una presa di spuma lenta e di un lungo contatto con i lieviti.",
+   t:[["grossolane","Bolle grandi e irregolari."],["mediamente fini","Bolle di dimensione intermedia."],["fini","Bolle piccole e regolari."]]},
+  {id:"bol_persist", nome:"Persistenza bollicine", soloBolle:true, cls:"bolle", def:"Per quanto tempo le bollicine continuano a formarsi nel bicchiere.",
+   t:[["evanescenti","Spariscono in poco tempo."],["mediamente persistenti","Durano per un tempo discreto."],["persistenti","Continuano a formarsi a lungo."]]}
+ ]},
+ {id:"naso", nome:"Naso", band:"Esame olfattivo", voci:[
+  {id:"olf_intensita", nome:"Intensità", def:"La forza con cui i profumi arrivano al naso, indipendentemente da quanti sono e da quanto sono belli. Dipende dalla quantità di sostanze volatili. Pesa poco nel punteggio: un naso potente non è per forza un naso di qualità.",
+   t:[["moderatamente intenso","Profumi percepibili ma non spiccati."],["intenso","Profumi netti e ben percepibili."],["molto intenso","Profumi spiccati e avvolgenti, quasi invadenti."]]},
+  {id:"descrittori", nome:"Descrittori", multi:true, def:"Le famiglie di profumi, riconosciute per analogia. Se ne possono scegliere più d'una. Gli aromi primari vengono dall'uva, i secondari dalla fermentazione, i terziari dall'affinamento. Minerale non è più una famiglia olfattiva: la mineralità si cerca in bocca, come sapidità.",
+   t:[["aromatico","Profumi tipici delle uve aromatiche (Moscato, Malvasia aromatica, Gewürztraminer, Brachetto), legati ai terpeni e riconoscibili già nell'acino."],["varietale","Profumo riconducibile al vitigno anche se non aromatico."],["fruttato","Frutta fresca, matura, cotta, in confettura o secca."],["floreale","Fiori freschi o appassiti."],["vegetale","Erba, foglie, fieno, ortaggi, sottobosco."],["fragrante","Note floreali e fruttate fresche insieme a crosta di pane: vini giovanissimi."],["speziato","Pepe, chiodo di garofano, cannella, vaniglia, noce moscata, liquirizia."],["pasticceria/panificazione","Lievito, crosta di pane, brioche, biscotto, burro: da autolisi dei lieviti nei metodi classici o da sosta sulle fecce."],["empireumatico","Tostato, affumicato, caffè, cacao, catrame: note da tostatura del legno o da lunga evoluzione."]]},
+  {id:"olf_complessita", nome:"Complessità", def:"La varietà dei profumi: quante famiglie e sfumature emergono nelle olfazioni successive. Pesa molto nel punteggio insieme all'attrattiva.",
+   t:[["moderatamente complesso","Poche famiglie riconoscibili."],["complesso","Diverse famiglie ben articolate."],["ampio","Numerose famiglie e sfumature che si susseguono."]]},
+  {id:"olf_qualita", nome:"Qualità olfattiva", giud:true, def:"Il giudizio di sintesi sul naso, sempre rispetto alla categoria del vino. Si fonda su purezza, eleganza, complessità e attrattiva. Gli aggettivi coincidono con le classi di punteggio.", t:QUAL}
+ ]},
+ {id:"bocca", nome:"Bocca", band:"Esame gusto-olfattivo", voci:[
+  {id:"dolcezza", nome:"Dolcezza", lato:"m", def:"La sensazione dolce data dagli zuccheri residui, cioè non trasformati in alcol dalla fermentazione. È una morbidezza.",
+   t:[["secco","Zuccheri non percepibili."],["poco dolce","Una lieve dolcezza percepibile."],["moderatamente dolce","Dolcezza evidente ma contenuta."],["dolce","Dolcezza piena."],["molto dolce","Dolcezza marcata: passiti, muffati, liquorosi."]]},
+  {id:"acidita", nome:"Acidità", lato:"d", def:"La freschezza data dagli acidi (tartarico, malico, citrico, lattico): fa salivare. È una durezza. Vibrante è un'acidità alta ma pulita e caratterizzante, per esempio in un Riesling; acidulo è l'unico gradino negativo, un'acidità scomposta e aggressiva.",
+   t:[["poco fresco","Acidità bassa, salivazione scarsa."],["moderatamente fresco","Acidità contenuta."],["fresco","Acidità ben presente e piacevole."],["vibrante","Acidità alta, tesa e pulita, tratto distintivo del vino."],["acidulo","Acidità eccessiva e aggressiva."]]},
+  {id:"calore", nome:"Alcolicità", lato:"m", def:"La sensazione di calore data dall'alcol etilico. È una morbidezza: l'alcol ha anche un lieve sapore dolce e contribuisce al corpo.",
+   t:[["poco caldo","Alcol appena percepibile."],["moderatamente caldo","Alcol percepibile ma contenuto."],["caldo","Alcol ben presente."],["molto caldo","Alcol marcato."],["alcolico","L'alcol brucia e prevale sul resto."]]},
+  {id:"tannini", nome:"Tannicità", lato:"d", def:"L'astringenza: i tannini si legano alle proteine della saliva e tolgono lubrificazione, lasciando la bocca asciutta. È una durezza, quasi solo dei rossi. Tenace indica un tannino abbondante e persistente ma di qualità, come nel Sagrantino; astringente è il gradino negativo, un tannino ruvido che allappa.",
+   t:[["poco tannico","Tannino appena percepibile."],["moderatamente tannico","Tannino presente ma contenuto."],["tannico","Tannino ben evidente."],["tenace","Tannino abbondante e persistente, di buona trama."],["astringente","Tannino eccessivo e ruvido che allappa."]]},
+  {id:"rotondita", nome:"Rotondità", lato:"m", def:"La sensazione tattile di morbidezza e pienezza, dovuta soprattutto alla glicerina. È una morbidezza.",
+   t:[["poco morbido","Il sorso risulta asciutto, poco avvolgente."],["moderatamente morbido","Morbidezza contenuta."],["morbido","Sorso avvolgente."],["vellutato","Morbidezza setosa e levigata."],["pastoso","Morbidezza densa, quasi masticabile: grandi passiti, vini molto ricchi."]]},
+  {id:"sapidita", nome:"Sapidità", lato:"d", def:"La sensazione salina data dai sali minerali disciolti. È una durezza e allunga il sorso facendo salivare.",
+   t:[["poco sapido","Sapidità appena percepibile."],["moderatamente sapido","Sapidità contenuta."],["sapido","Sapidità ben presente."],["saporito","Sapidità spiccata, tratto distintivo del vino."],["salato","Percezione salina netta, eccessiva."]]},
+  {id:"eff_bocca", nome:"Effervescenza", soloBolle:true, cls:"bolle", def:"Come si comporta la CO2 in bocca. L'anidride carbonica accentua le durezze e attenua le morbidezze, per questo cambia l'equilibrio del sorso. Si valuta solo in frizzanti e spumanti.",
+   t:[["delicata","Carbonica appena percepibile."],["moderata","Presente ma contenuta."],["vivace","Ben avvertibile, piacevolmente frizzante."],["esuberante","Molta carbonica, la spuma riempie la bocca."],["incisiva","Carbonica pungente, sensazione tattile marcata."]]},
+  {id:"gol_intensita", nome:"Intensità", def:"La forza complessiva di ciò che si percepisce in bocca: sapori, sensazioni tattili e aromi che risalgono al naso per via retronasale.",
+   t:[["moderatamente intenso","Sensazioni percepibili ma contenute."],["intenso","Sensazioni nette."],["molto intenso","Sensazioni spiccate e profonde."]]},
+  {id:"struttura", nome:"Struttura", def:"Il peso del vino in bocca. Dipende dall'estratto secco, cioè quello che resta togliendo acqua, alcol e sostanze volatili: zuccheri, acidi fissi, glicerina, polifenoli, sali.",
+   t:[["di medio corpo","Estratto nella media."],["di corpo pieno","Estratto ricco, sorso consistente."],["robusto","Struttura imponente."]]},
+  {id:"equilibrio", nome:"Equilibrio", giud:true, def:"Il rapporto fra morbidezze (dolcezza, alcolicità, rotondità) e durezze (acidità, tannicità, sapidità, e la carbonica nei vini con bollicine), giudicato rispetto alla categoria. Un vino dolce può essere equilibrato se l'acidità sostiene lo zucchero.",
+   t:[["poco equilibrato","Una componente prevale nettamente."],["mediamente equilibrato","Una componente prevale in modo percepibile."],["equilibrato","Morbidezze e durezze si compensano."]]},
+  {id:"persistenza", nome:"Persistenza", timer:true, def:"Quanto durano le sensazioni gusto-olfattive dopo aver deglutito. Si conta in secondi, ignorando la semplice sensazione acida o amara che resta. Il cronometro qui sotto ti aiuta a contarli.",
+   t:[["moderatamente persistente","Sensazioni che svaniscono presto."],["persistente","Sensazioni che durano a lungo."],["molto persistente","Sensazioni lunghissime."]]},
+  {id:"gol_qualita", nome:"Qualità gusto-olfattiva", giud:true, def:"Il giudizio di sintesi sulla bocca, rispetto alla categoria, con gli stessi aggettivi delle classi di punteggio.", t:QUAL}
+ ]},
+ {id:"finale", nome:"Finale", band:"Considerazioni finali", voci:[
+  {id:"stato", nome:"Stato evolutivo", def:"A che punto della sua vita è il vino. La scheda prevede solo due termini.",
+   t:[["pronto","Si beve ora con soddisfazione e ha ancora margine di evoluzione."],["maturo","Ha completato l'evoluzione ed è al suo apice."]]},
+  {id:"armonia", nome:"Armonia", giud:true, def:"La coerenza fra vista, naso e bocca e la piacevolezza d'insieme: le fasi raccontano lo stesso vino.",
+   t:[["poco armonico","Le fasi non dialogano fra loro."],["mediamente armonico","Coerenza discreta, qualche stacco."],["armonico","Piena coerenza e piacevolezza."]]},
+  {id:"qualita_compl", nome:"Qualità complessiva", giud:true, def:"Il giudizio finale sul vino rispetto alla sua categoria. Deve essere coerente con il punteggio: la classe che esce dalla scheda a punti è lo stesso aggettivo.", t:QUAL}
+ ]}
+];
+const ALL_VOCI = FASI.flatMap(f=>f.voci);
+const VOCE = Object.fromEntries(ALL_VOCI.map(v=>[v.id,v]));
+
+/* ================== SCHEDA A PUNTI ================== */
+const PUNTI = [
+ {fase:"Esame visivo", peso:10, voci:[{id:"p_aspetto",nome:"Aspetto",s:1,def:"Il giudizio su tutto l'esame visivo: limpidezza, colore, consistenza o effervescenza, in rapporto alla categoria."}]},
+ {fase:"Esame olfattivo", peso:30, voci:[
+   {id:"p_olf_int",nome:"Intensità",s:.5,def:"La forza dei profumi. Pesa poco: la quantità non è qualità."},
+   {id:"p_olf_pur",nome:"Purezza, Eleganza",s:1,def:"Profumi netti, senza deviazioni né difetti, e finezza della loro espressione."},
+   {id:"p_olf_com",nome:"Complessità, Attrattiva",s:1.5,def:"Ricchezza di sfumature e capacità del naso di attirare e invitare al sorso. È la voce più pesante del naso."}]},
+ {fase:"Esame gusto-olfattivo", peso:40, voci:[
+   {id:"p_gol_int",nome:"Intensità, struttura",s:.5,def:"La forza delle sensazioni in bocca e il peso del vino. Come al naso, la quantità pesa poco."},
+   {id:"p_gol_equ",nome:"Equilibrio",s:1,def:"Quanto morbidezze e durezze si compensano, rispetto a ciò che ci si aspetta dalla categoria."},
+   {id:"p_gol_esp",nome:"Espressività, Eleganza",s:1,def:"Quanto il sorso racconta vitigno e territorio, e la finezza della sua trama."},
+   {id:"p_gol_per",nome:"Persistenza, Attrattiva",s:1.5,def:"Durata e qualità del finale, e voglia di tornare al bicchiere. È la voce più pesante della bocca."}]},
+ {fase:"Considerazioni finali", peso:20, voci:[
+   {id:"p_fin_arm",nome:"Armonia complessiva",s:.5,def:"Coerenza fra vista, naso e bocca e piacevolezza d'insieme."},
+   {id:"p_fin_qua",nome:"Qualità, Carattere complessivo",s:1.5,def:"Il giudizio finale sul vino e sulla sua personalità rispetto alla categoria. Con Complessità e Persistenza è una delle tre voci più pesanti."}]}
+];
+const ALL_P = PUNTI.flatMap(f=>f.voci);
+const CLASSI = [[94,"eccellente"],[90,"ottimo"],[85,"distinto"],[80,"buono"],[70,"accettabile"]];
+function score(w){ let t=0; for(const p of ALL_P){ const v=w.voti?.[p.id]; if(v==null) return null; t+=v*p.s; } return Math.round(t*10)/10; }
+function classe(s){ if(s==null) return null; for(const c of CLASSI) if(s>=c[0]) return c[1]; return null; }
+function viti(s){ return s>=90?"4 viti":s>=85?"3 viti":s>=80?"2 viti":"1 vite"; }
+
+/* ================== UTILITÀ ================== */
+const $ = s=>document.querySelector(s);
+const esc = s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = (n,d=1)=>n==null||isNaN(n)?"–":Number(n).toLocaleString("it-IT",{maximumFractionDigits:d,minimumFractionDigits:0});
+const today = ()=>{ const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; };
+const MESI = ["gennaio","febbraio","marzo","aprile","maggio","giugno","luglio","agosto","settembre","ottobre","novembre","dicembre"];
+const uid = ()=>"v"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const cap = s=>s?s.charAt(0).toUpperCase()+s.slice(1):s;
+const buzz = ms=>{ try{ navigator.vibrate?.(ms||6); }catch(e){} };
+const standalone = ()=>matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+const isIOS = ()=>/iPhone|iPad|iPod/.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+const ICON = {
+  back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>',
+  next:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>',
+  more:'<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>',
+  cantina:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 2h8l-.6 6.2a3.5 3.5 0 0 1-6.8 0z"/><path d="M12 12v8M8 22h8"/></svg>',
+  diario:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  guida:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h6a3 3 0 0 1 3 3v13a2 2 0 0 0-2-2H4z"/><path d="M20 4h-4a3 3 0 0 0-3 3v13a2 2 0 0 1 2-2h5z"/></svg>',
+  plus:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>'
+};
+function glassColor(w){
+  const c=w.desc?.colore; if(c&&SW[c]) return SW[c];
+  return {bianco:"#ecd77a",rosa:"#ee9d8f",rosso:"#8c1a30"}[w.colore]||"#999";
+}
+function glass(w,big){
+  if(big&&w.foto) return `<button class="photo" data-act="vedifoto" aria-label="Vedi la foto dell'etichetta"><img class="glass big" src="${w.foto}" alt=""></button>`;
+  const bol=w.tipo&&w.tipo!=="fermo"; return `<span class="glass ${big?"big":""}" style="background:${glassColor(w)}" aria-hidden="true">${bol?'<span class="fx"></span>':""}</span>`;
+}
+function clsPill(s){ const c=classe(s); return c?`<span class="cls c-${c}">${cap(c)}</span>`:`<span class="cls c-none">da valutare</span>`; }
+
+/* ================== STATO E SALVATAGGIO (IndexedDB, con riserva su localStorage) ================== */
+const S = { vini:new Map(), view:"cantina", id:null, step:0, q:"", fc:"tutti", sort:"data", mode:"loading", sheet:null };
+let dirty=new Set(), timers={};
+const LKEY="quaderno-ais-locale";
+const IDB = {
+  db:null,
+  open(){ return new Promise((res,rej)=>{ if(!("indexedDB" in window)) return rej(new Error("no idb")); const r=indexedDB.open("quaderno-ais",1);
+    r.onupgradeneeded=()=>{ const d=r.result; if(!d.objectStoreNames.contains("vini")) d.createObjectStore("vini",{keyPath:"id"}); if(!d.objectStoreNames.contains("meta")) d.createObjectStore("meta"); };
+    r.onsuccess=()=>{ this.db=r.result; res(this.db); }; r.onerror=()=>rej(r.error); r.onblocked=()=>rej(new Error("blocked")); }); },
+  tx(store,mode,fn){ return new Promise((res,rej)=>{ const t=this.db.transaction(store,mode); const q=fn(t.objectStore(store)); t.oncomplete=()=>res(q&&q.result); t.onerror=()=>rej(t.error); t.onabort=()=>rej(t.error); }); },
+  all(){ return this.tx("vini","readonly",s=>s.getAll()); },
+  put(w){ return this.tx("vini","readwrite",s=>s.put(w)); },
+  del(id){ return this.tx("vini","readwrite",s=>s.delete(id)); },
+  getMeta(k){ return this.tx("meta","readonly",s=>s.get(k)); },
+  setMeta(k,v){ return this.tx("meta","readwrite",s=>s.put(v,k)); }
+};
+function lsLoad(){ try{ const r=JSON.parse(localStorage.getItem(LKEY)||"[]"); r.forEach(w=>S.vini.set(w.id,w)); }catch(e){} }
+function lsSave(){ try{ localStorage.setItem(LKEY,JSON.stringify([...S.vini.values()])); }catch(e){ toast("Spazio del telefono pieno: scarica un backup ed elimina qualche foto."); } }
+
+function blank(){ return {id:uid(),nome:"",produttore:"",denominazione:"",annata:"",vitigni:"",regione:"",colore:"rosso",tipo:"fermo",
+  data:today(),prezzo:"",dove:"",desc:{},descrittori:[],sentori:"",secondi:null,foto:"",voti:{},abbinamento:"",note:"",appunti:"",creato:new Date().toISOString()}; }
+function isEmpty(w){
+  const txt=["nome","produttore","denominazione","annata","vitigni","regione","prezzo","dove","sentori","abbinamento","note","appunti","foto"];
+  return txt.every(k=>!(w[k]||"").trim?.()&&!w[k]) && !Object.keys(w.desc||{}).length && !(w.descrittori||[]).length && !Object.keys(w.voti||{}).length && w.secondi==null;
+}
+function forDb(w){ const o=JSON.parse(JSON.stringify(w)); o.punteggio=score(w); o.classe=classe(o.punteggio); o.aggiornato=new Date().toISOString(); return o; }
+
+function queueSave(id,now){
+  dirty.add(id); setStatus();
+  clearTimeout(timers[id]);
+  timers[id]=setTimeout(()=>flush(id), now?0:500);
+}
+async function flush(id){
+  const w=S.vini.get(id);
+  if(S.mode!=="idb"){ lsSave(); dirty.delete(id); setStatus(); return; }
+  if(!w){ dirty.delete(id); setStatus(); return; }
+  try{ await IDB.put(forDb(w)); }
+  catch(e){ if(e?.name==="QuotaExceededError") toast("Spazio del telefono pieno: scarica un backup ed elimina qualche foto."); else toast("Non riesco a salvare questa modifica."); }
+  dirty.delete(id); setStatus();
+}
+async function removeWine(id){
+  S.vini.delete(id); dirty.delete(id); clearTimeout(timers[id]);
+  if(S.mode==="idb"){ try{ await IDB.del(id); }catch(e){} } else lsSave();
+}
+function setStatus(){
+  const el=$("#status"); if(!el) return;
+  if(S.mode==="loading"){ el.className="status busy"; el.innerHTML="<i></i>Apro…"; return; }
+  const busy=dirty.size>0; el.className="status"+(busy?" busy":"")+(S.mode==="local"?" local":""); el.innerHTML=`<i></i>${busy?"Salvo…":S.mode==="local"?"Salvato (riserva)":"Salvato"}`;
+}
+const ESEMPIO = {id:"esempio-fiano",nome:"Esempio: Fiano di Avellino",produttore:"Vino d'esempio, eliminalo quando vuoi",denominazione:"Fiano di Avellino DOCG",annata:"2023",vitigni:"Fiano",regione:"Campania, Irpinia",colore:"bianco",tipo:"fermo",data:today(),prezzo:"",dove:"",
+  desc:{limpidezza:"cristallino",colore:"paglierino",consistenza:"consistente",olf_intensita:"intenso",olf_complessita:"complesso",olf_qualita:"distinto",dolcezza:"secco",acidita:"fresco",calore:"caldo",rotondita:"moderatamente morbido",sapidita:"saporito",gol_intensita:"intenso",struttura:"di corpo pieno",equilibrio:"equilibrato",persistenza:"persistente",gol_qualita:"distinto",stato:"pronto",armonia:"armonico",qualita_compl:"distinto"},
+  descrittori:["fruttato","floreale","empireumatico"],sentori:"pera, acacia, nocciola tostata",secondi:9,foto:"",
+  voti:{p_aspetto:9,p_olf_int:9,p_olf_pur:9,p_olf_com:9,p_gol_int:9,p_gol_equ:8,p_gol_esp:9,p_gol_per:8,p_fin_arm:8,p_fin_qua:8},
+  abbinamento:"Pesce al forno, mozzarella di bufala",note:"Scheda d'esempio per mostrare come si compila il quaderno.",appunti:"",creato:new Date().toISOString()};
+async function boot(){
+  history.replaceState({v:"cantina"},"");
+  render();
+  try{
+    await IDB.open();
+    S.mode="idb";
+    const rows=await IDB.all(); rows.forEach(w=>S.vini.set(w.id,w));
+    // prima apertura: porto dentro un eventuale salvataggio di riserva e la scheda d'esempio
+    if(!rows.length){
+      lsLoad();
+      if(S.vini.size){ for(const w of S.vini.values()) await IDB.put(forDb(w)); }
+      else if(!(await IDB.getMeta("seeded"))){ S.vini.set(ESEMPIO.id,ESEMPIO); await IDB.put(forDb(ESEMPIO)); }
+      await IDB.setMeta("seeded",1);
+    }
+  }catch(e){ S.mode="local"; S.vini.clear(); lsLoad(); }
+  try{ navigator.storage?.persist?.(); }catch(e){}
+  render();
+}
+
+/* ================== RENDER ================== */
+function render(){
+  hideTip();
+  const app=$("#app");
+  if(S.view==="vino" && S.vini.has(S.id)) app.innerHTML=viewVino();
+  else if(S.view==="diario") app.innerHTML=viewDiario();
+  else if(S.view==="guida") app.innerHTML=viewGuida();
+  else { S.view="cantina"; app.innerHTML=viewCantina(); }
+  app.insertAdjacentHTML("beforeend", S.view==="vino"?stepbar():nav());
+  setStatus(); bind();
+}
+function topbar(title,back){
+  return `<header class="top">${back?`<button class="iconbtn" data-act="home" aria-label="Torna alla cantina">${ICON.back}</button>`:""}<h1>${esc(title)}</h1><span class="status" id="status"></span>${back?`<button class="iconbtn" data-act="menu" aria-label="Altre azioni">${ICON.more}</button>`:`<button class="iconbtn" data-act="dati" aria-label="Dati, backup e installazione">${ICON.more}</button>`}</header>`;
+}
+function nav(){
+  const b=(v,l)=>`<button class="${S.view===v?"on":""}" data-nav="${v}">${ICON[v]}${l}</button>`;
+  return `${S.view==="cantina"?`<button class="fab" data-act="new">${ICON.plus}Nuovo vino</button>`:""}<nav class="nav"><div class="in">${b("cantina","Cantina")}${b("diario","Diario")}${b("guida","Guida")}</div></nav>`;
+}
+
+/* ---- cantina ---- */
+function installBanner(){
+  if(standalone()) return "";
+  try{ if(localStorage.getItem("qd-nobanner")) return ""; }catch(e){}
+  return `<div class="banner"><span>Aggiungila alla schermata Home: si apre come un'app e funziona anche senza rete.</span><button data-act="dati">Come si fa</button><button data-act="nobanner" aria-label="Nascondi">✕</button></div>`;
+}
+function viewCantina(){
+  const all=[...S.vini.values()];
+  const scored=all.map(score).filter(s=>s!=null);
+  const avg=scored.length?scored.reduce((a,b)=>a+b,0)/scored.length:null;
+  const best=scored.length?Math.max(...scored):null;
+  let h=topbar("Cantina");
+  if(S.mode==="loading"&&!all.length) return h+`<div class="empty"><h2>Sto aprendo il quaderno</h2><p>I tuoi vini compaiono qui tra un istante.</p></div>`;
+  h+=installBanner();
+  if(S.mode==="local") h+=`<div class="banner"><span>Questo browser non offre l'archivio principale: i vini restano nel salvataggio di riserva. Scarica un backup ogni tanto.</span></div>`;
+  if(!all.length) return h+`<div class="empty"><h2>La cantina è vuota</h2><p>Ogni vino che degusti diventa una scheda: etichetta, vista, naso, bocca, punteggio e appunti. Hai un backup di un altro quaderno? Importalo dal menu in alto.</p><button class="btn primary" data-act="new">Degusta il primo vino</button></div>`;
+  h+=`<div class="summary"><div class="tile"><div class="k">Vini</div><div class="v num">${fmt(all.length,0)}</div></div><div class="tile"><div class="k">Media</div><div class="v num">${fmt(avg)}</div></div><div class="tile"><div class="k">Migliore</div><div class="v num">${fmt(best)}</div></div></div>`;
+  h+=`<input class="search" id="q" type="search" placeholder="Cerca vino, cantina, vitigno, zona" value="${esc(S.q)}" autocomplete="off" enterkeyhint="search">`;
+  const f=(k,l,sw)=>`<button class="pill ${S.fc===k?"on":""}" data-fc="${k}">${sw?`<span class="glass" style="width:16px;height:16px;display:inline-block;background:${sw}"></span>`:""}${l}</button>`;
+  h+=`<div class="filters">${f("tutti","Tutti")}${f("bianco","Bianchi","#ecd77a")}${f("rosa","Rosa","#ee9d8f")}${f("rosso","Rossi","#8c1a30")}${f("bolle","Bollicine")}<button class="pill" data-act="sort">Ordina: ${S.sort==="data"?"data":"punteggio"}</button></div>`;
+  h+=`<div id="list">${listHtml(all)}</div>`;
+  return h;
+}
+function listHtml(all){
+  all=all||[...S.vini.values()];
+  const q=S.q.trim().toLowerCase();
+  let list=all.filter(w=>(S.fc==="tutti"||(S.fc==="bolle"?w.tipo!=="fermo":w.colore===S.fc))&&(!q||[w.nome,w.produttore,w.denominazione,w.vitigni,w.regione,w.annata,w.dove].join(" ").toLowerCase().includes(q)));
+  if(S.sort==="punteggio") list.sort((a,b)=>(score(b)??-1)-(score(a)??-1));
+  else list.sort((a,b)=>(b.data||"").localeCompare(a.data||"")||(b.creato||"").localeCompare(a.creato||""));
+  if(!list.length) return `<div class="empty"><p style="margin:0">Nessun vino corrisponde alla ricerca.</p></div>`;
+  let h="", lastM="";
+  for(const w of list){
+    if(S.sort==="data"){ const d=new Date(w.data||w.creato); const m=`${MESI[d.getMonth()]} ${d.getFullYear()}`; if(m!==lastM){ h+=`<div class="month">${m}</div>`; lastM=m; } }
+    const s=score(w);
+    h+=`<button class="wcard" data-open="${w.id}">${glass(w)}<span class="mn"><span class="nm">${esc(w.nome||"Vino senza nome")}${w.annata?` ${esc(w.annata)}`:""}</span><br><span class="sub">${esc([w.produttore,w.denominazione].filter(Boolean).join(" · ")||"Da completare")}</span></span><span class="score">${s!=null?`<b class="num">${fmt(s)}</b>`:""}${clsPill(s)}</span></button>`;
+  }
+  return h;
+}
+
+/* ---- scheda vino ---- */
+const STEPS=["Etichetta","Vista","Naso","Bocca","Finale","Punteggio","Note"];
+function cur(){ return S.vini.get(S.id); }
+function visibleVoci(f,w){ const bol=w.tipo!=="fermo"; return f.voci.filter(v=>!(v.soloBolle&&!bol)&&!(v.soloFermi&&bol)); }
+function stepDone(i,w){
+  if(i===0) return !!w.nome;
+  if(i>=1&&i<=4){ const vs=visibleVoci(FASI[i-1],w); return vs.every(v=>v.multi?(w.descrittori||[]).length:w.desc?.[v.id]); }
+  if(i===5) return score(w)!=null;
+  return !!(w.note||w.appunti);
+}
+function stepsHtml(w){ return `<nav class="steps" id="steps">${STEPS.map((n,i)=>`<button class="${S.step===i?"on":""}" data-step="${i}"><span class="dn ${stepDone(i,w)?"ok":""}"></span>${n}</button>`).join("")}</nav>`; }
+function viewVino(){
+  const w=cur(), s=score(w);
+  let h=topbar("Scheda",true);
+  h+=`<div class="hero">${glass(w,true)}<div class="t"><h2>${esc(w.nome||"Vino senza nome")}${w.annata?` ${esc(w.annata)}`:""}</h2><div class="sub">${esc([w.produttore,w.denominazione,w.regione].filter(Boolean).join(" · ")||"Compila l'etichetta")}</div></div><div class="ring"><b class="num">${fmt(s)}</b>${clsPill(s)}</div></div>`;
+  h+=stepsHtml(w);
+  h+=`<div id="stepBody">${stepBody(w)}</div>`;
+  return h;
+}
+function stepbar(){
+  const w=cur(), s=score(w);
+  return `<div class="stepbar"><div class="in"><button class="iconbtn" data-act="prev" aria-label="Passo precedente" ${S.step===0?"disabled style='opacity:.35'":""}>${ICON.back}</button><div class="mid"><b>${STEPS[S.step]}</b><span>${S.step+1} di ${STEPS.length} · ${s!=null?`${fmt(s)} punti`:"punteggio da dare"}</span></div><button class="iconbtn" data-act="next" aria-label="Passo successivo" ${S.step===STEPS.length-1?"disabled style='opacity:.35'":""}>${ICON.next}</button></div></div>`;
+}
+function fld(k,label,type="text",extra=""){
+  const w=cur();
+  if(type==="area") return `<label class="field"><span>${label}</span><textarea id="f_${k}" data-k="${k}" ${extra}>${esc(w[k])}</textarea></label>`;
+  return `<label class="field"><span>${label}</span><input id="f_${k}" data-k="${k}" type="${type}" value="${esc(w[k])}" enterkeyhint="next" ${extra}></label>`;
+}
+function stepBody(w){
+  if(S.step===0){
+    const seg=(k,opts)=>`<div class="seg">${opts.map(o=>`<button class="${w[k]===o[0]?"on":""}" data-seg="${k}" data-val="${o[0]}">${o[2]?`<span class="sw" style="background:${o[2]}"></span>`:""}${o[1]}</button>`).join("")}</div>`;
+    return `<div class="band"><span>Etichetta</span></div><div class="panel" style="padding-top:12px">
+      <div class="field"><span>Foto dell'etichetta</span><div class="photo">${w.foto?`<img src="${w.foto}" alt="Etichetta">`:""}<div class="actions" style="flex-direction:column;gap:6px"><button class="btn" data-act="foto">${w.foto?"Cambia foto":"Scatta o scegli una foto"}</button>${w.foto?`<button class="btn danger" data-act="nofoto">Togli la foto</button>`:""}</div></div></div>
+      ${fld("nome","Nome del vino","text",'placeholder="es. Fiano di Avellino" autocomplete="off"')}
+      ${fld("produttore","Produttore","text",'autocomplete="off"')}
+      ${fld("denominazione","Denominazione","text",'placeholder="DOCG, DOC, IGT…" autocomplete="off"')}
+      <div class="grid2">${fld("annata","Annata","text",'inputmode="numeric" autocomplete="off"')}${fld("data","Data degustazione","date")}</div>
+      ${fld("vitigni","Vitigni","text",'placeholder="separali con una virgola" autocomplete="off"')}
+      ${fld("regione","Regione o zona","text",'autocomplete="off"')}
+      <div class="field"><span>Colore</span>${seg("colore",[["bianco","Bianco","#ecd77a"],["rosa","Rosa","#ee9d8f"],["rosso","Rosso","#8c1a30"]])}</div>
+      <div class="field"><span>Tipologia</span>${seg("tipo",[["fermo","Fermo"],["frizzante","Frizzante"],["spumante","Spumante"]])}</div>
+      <div class="grid2">${fld("prezzo","Prezzo in euro","text",'inputmode="decimal" autocomplete="off"')}${fld("dove","Dove o occasione","text",'autocomplete="off"')}</div>
+    </div>`;
+  }
+  if(S.step>=1&&S.step<=4){
+    const f=FASI[S.step-1], vs=visibleVoci(f,w);
+    let inner="";
+    if(f.id==="bocca"){
+      const pairs=vs.filter(v=>v.lato), rest=vs.filter(v=>!v.lato);
+      inner+=`<div class="note">Morbidezze e durezze a coppie: dal confronto nasce l'equilibrio.</div>`;
+      inner+=pairs.map(voceHtml).join("")+rest.map(voceHtml).join("");
+    } else inner=vs.map(voceHtml).join("");
+    if(f.id==="naso") inner+=`<label class="field" style="margin-top:12px"><span>Sentori specifici</span><input id="f_sentori" data-k="sentori" value="${esc(w.sentori)}" placeholder="es. pesca bianca, biancospino, nocciola" autocomplete="off" enterkeyhint="done"></label>`;
+    return `<div class="band"><span>${f.band}</span></div><div class="panel">${inner}</div>`;
+  }
+  if(S.step===5) return scoreHtml(w);
+  const d=descr(w);
+  return `<div class="band"><span>La tua descrizione</span></div><div class="panel" style="padding-top:12px">${d?`<p class="descr">${esc(d)}</p><div class="actions"><button class="btn" data-act="copy">Copia</button>${navigator.share?`<button class="btn" data-act="share">Condividi la scheda</button>`:""}</div>`:`<p style="color:var(--muted);margin:0">Si compone da sola con i termini che scegli in Vista, Naso, Bocca e Finale.</p>`}</div>
+   <div class="band"><span>Appunti</span></div><div class="panel" style="padding-top:12px">
+    ${fld("abbinamento","Abbinamento")}
+    ${fld("note","Impressioni personali","area")}
+    ${fld("appunti","Notizie sul vino, sulla cantina, sul territorio","area")}
+   </div>`;
+}
+function termsOf(v,w){ return v.colore?(COLORI[w.colore]||[]):v.t; }
+function voceHtml(v){
+  const w=cur(), terms=termsOf(v,w), sel=v.multi?(w.descrittori||[]):[w.desc?.[v.id]];
+  const chips=terms.map(t=>`<button class="chip ${sel.includes(t[0])?"on":""}" data-voce="${v.id}" data-term="${esc(t[0])}" data-tip="${esc(t[1])}">${v.colore?`<span class="sw" style="background:${SW[t[0]]}"></span>`:""}${esc(t[0])}</button>`).join("");
+  const off=!v.multi&&sel[0]&&!terms.some(t=>t[0]===sel[0])?`<button class="chip on" data-voce="${v.id}" data-term="${esc(sel[0])}">${esc(sel[0])} (vecchio termine)</button>`:"";
+  const cls=[v.giud?"giud":"",v.cls||""].join(" ");
+  const tag=v.lato==="m"?"morbidezza":v.lato==="d"?"durezza":v.multi?"anche più di uno":v.soloBolle?"solo frizzanti e spumanti":v.soloFermi?"solo vini fermi":"";
+  const timer=v.timer?`<div class="timer"><button class="btn ${T.on?"run":""}" data-act="timer" id="timerBtn">${T.on?"Ferma":"Cronometra il finale"}</button><span class="sec num" id="timerV">${T.on?"0,0 s":w.secondi!=null?`${fmt(w.secondi,0)} s`:""}</span><small>Tocca quando deglutisci, poi quando le sensazioni svaniscono.</small></div>`:"";
+  return `<div class="voce ${cls}"><div class="vh"><h3>${v.nome}</h3>${tag?`<span class="tag">${tag}</span>`:""}<span style="flex:1"></span><button class="info" data-info="${v.id}" aria-label="Spiegazione di ${esc(v.nome)}">i</button></div>
+    <div class="chips">${chips}${off}</div>${timer}</div>`;
+}
+function scoreHtml(w){
+  const s=score(w);
+  let h=`<div class="total"><div class="row"><div><div class="big num">${fmt(s)}</div><div style="color:var(--muted)">punti su 100</div></div><div>${clsPill(s)}<div style="margin-top:6px;color:var(--muted)">${s!=null?`Guida Vitae: ${viti(s)}`:`Mancano ${fmt(ALL_P.filter(p=>w.voti?.[p.id]==null).length,0)} voci`}</div></div></div>`;
+  h+=`<div class="phases">${PUNTI.map(f=>{ let t=0,ok=true; f.voci.forEach(p=>{const v=w.voti?.[p.id]; if(v==null) ok=false; else t+=v*p.s;}); return `<div>${f.fase.replace("Esame ","").replace("Considerazioni finali","Finale")}<b class="num">${ok?fmt(t):"–"} / ${fmt(f.peso,0)}</b></div>`; }).join("")}</div>`;
+  h+=rapido(w)+`</div>`;
+  for(const f of PUNTI){
+    h+=`<div class="band"><span>${f.fase}</span><span class="num">${fmt(f.peso,0)}%</span></div><div class="panel">`;
+    for(const p of f.voci){
+      const v=w.voti?.[p.id];
+      h+=`<div class="prow"><div class="nmc"><h3>${p.nome}</h3><span class="peso num" data-tip="Scostamento: ogni punto di voto su questa voce vale ${fmt(p.s)} punti sul totale.">×${fmt(p.s)}</span><button class="info" data-pinfo="${p.id}" aria-label="Spiegazione di ${esc(p.nome)}">i</button></div>
+      <div class="votes">${[10,9,8,7].map(n=>`<button class="${v===n?"on":""}" data-p="${p.id}" data-v="${n}" aria-label="Voto ${n}">${n}</button>`).join("")}</div></div>`;
+    }
+    h+=`</div>`;
+  }
+  h+=`<div class="panel solo" style="margin-bottom:16px"><button class="btn block" data-act="resetvoti">Azzera i voti</button></div>`;
+  return h;
+}
+function rapido(w){
+  const vs=ALL_P.map(p=>w.voti?.[p.id]); if(vs.some(v=>v==null)) return `<div class="rapido"><h3>Calcolo rapido</h3><p style="margin:0;color:var(--muted)">Dai un voto da 10 a 7 a ogni voce, sempre rispetto alla categoria del vino. Qui compare il conto da fare a mente in esame.</p></div>`;
+  const cnt={}; vs.forEach(v=>cnt[v]=(cnt[v]||0)+1);
+  const base=+Object.keys(cnt).sort((a,b)=>cnt[b]-cnt[a]||Math.abs(a-8)-Math.abs(b-8))[0];
+  const diff=ALL_P.filter(p=>w.voti[p.id]!==base);
+  let li=`<li>Colonna piena dei ${base}: parti da <b class="num">${base*10}</b>.</li>`;
+  diff.forEach(p=>{ const d=(w.voti[p.id]-base)*p.s; li+=`<li>${p.nome}: ${w.voti[p.id]} invece di ${base}, <b class="num">${d>0?"+":"−"}${fmt(Math.abs(d))}</b>.</li>`; });
+  li+=`<li>Totale: <b class="num">${fmt(score(w))}</b>.</li>`;
+  return `<div class="rapido"><h3>Calcolo rapido</h3><ol>${li}</ol></div>`;
+}
+function descr(w){
+  const g=k=>w.desc?.[k]||"", P=[];
+  const vis=[g("limpidezza"),g("colore")].filter(Boolean);
+  if(w.tipo==="fermo"&&g("consistenza")) vis.push(g("consistenza"));
+  let s1=vis.length?`Alla vista è ${vis.join(", ")}`:"";
+  if(w.tipo!=="fermo"){
+    const b=[g("bol_grana")&&`bollicine ${g("bol_grana")}`,g("bol_catenelle")&&`catenelle ${g("bol_catenelle")}`,g("bol_persist")&&`${g("bol_persist")}`,g("bol_ascesa")&&`velocità di ascesa ${g("bol_ascesa")}`].filter(Boolean);
+    if(b.length) s1+=(s1?", con ":"Alla vista mostra ")+b.join(", ");
+  }
+  if(s1) P.push(s1+".");
+  const n=[g("olf_intensita"),g("olf_complessita")].filter(Boolean);
+  const fam=(w.descrittori||[]).join(", "), sen=w.sentori?.trim();
+  if(n.length||fam||sen){ let s=`Al naso è ${n.join(" e ")||"riconoscibile"}`; if(fam) s+=`, ${fam}`; if(sen) s+=`, con sentori di ${sen}`; if(g("olf_qualita")) s+=`; di qualità ${g("olf_qualita").replace("buono","buona").replace("distinto","distinta").replace("ottimo","ottima")}`; P.push(s+"."); }
+  const m=["dolcezza","calore","rotondita","acidita","tannini","sapidita"].map(g).filter(Boolean);
+  const per=g("persistenza")?g("persistenza")+(w.secondi!=null?` (circa ${fmt(w.secondi,0)} ${w.secondi===1?"secondo":"secondi"})`:""):"";
+  const m2=[g("eff_bocca")&&`effervescenza ${g("eff_bocca")}`,g("gol_intensita"),g("struttura"),g("equilibrio"),per].filter(Boolean);
+  if(m.length||m2.length){ let s=`Al sorso è ${[...m,...m2].join(", ")}`; if(g("gol_qualita")) s+=`; di qualità ${g("gol_qualita").replace("buono","buona").replace("distinto","distinta").replace("ottimo","ottima")}`; P.push(s+"."); }
+  const fi=[g("stato"),g("armonia")].filter(Boolean);
+  if(fi.length||g("qualita_compl")) P.push(`Vino ${fi.join(" e ")}${g("qualita_compl")?`${fi.length?", ":""}complessivamente ${g("qualita_compl")}`:""}.`);
+  return P.join(" ");
+}
+function schedaText(w){
+  const s=score(w), L=[];
+  L.push([w.nome,w.annata].filter(Boolean).join(" ")||"Vino senza nome");
+  const sub=[w.produttore,w.denominazione,w.regione].filter(Boolean).join(" · "); if(sub) L.push(sub);
+  if(w.vitigni) L.push("Vitigni: "+w.vitigni);
+  if(w.data) L.push("Degustato il "+w.data.split("-").reverse().join("/"));
+  if(s!=null) L.push(`Punteggio AIS: ${fmt(s)}/100, ${classe(s)}`);
+  const d=descr(w); if(d) L.push("",d);
+  if(w.abbinamento) L.push("","Abbinamento: "+w.abbinamento);
+  if(w.note) L.push("",w.note);
+  return L.join("\n");
+}
+
+/* ---- diario ---- */
+function viewDiario(){
+  const all=[...S.vini.values()];
+  let h=topbar("Diario");
+  if(!all.length) return h+`<div class="empty"><h2>Ancora niente da raccontare</h2><p>Qui vedrai quanto degusti nel tempo, come si distribuiscono i tuoi punteggi e i vini migliori.</p></div>`;
+  const sc=all.map(w=>({w,s:score(w)})).filter(x=>x.s!=null);
+  const avg=sc.length?sc.reduce((a,b)=>a+b.s,0)/sc.length:null;
+  h+=`<div class="summary"><div class="tile"><div class="k">Degustati</div><div class="v num">${fmt(all.length,0)}</div></div><div class="tile"><div class="k">Valutati</div><div class="v num">${fmt(sc.length,0)}</div></div><div class="tile"><div class="k">Media</div><div class="v num">${fmt(avg)}</div></div></div>`;
+  const now=new Date(); const ms=[];
+  for(let i=11;i>=0;i--){ const d=new Date(now.getFullYear(),now.getMonth()-i,1); ms.push({y:d.getFullYear(),m:d.getMonth(),n:0}); }
+  all.forEach(w=>{ const d=new Date(w.data||w.creato); const x=ms.find(o=>o.y===d.getFullYear()&&o.m===d.getMonth()); if(x) x.n++; });
+  const mx=Math.max(1,...ms.map(o=>o.n));
+  h+=`<div class="card"><h2>Vini degustati negli ultimi 12 mesi</h2><div class="months">${ms.map(o=>`<div class="m"><div class="col ${o.n?"has":""}" style="height:${o.n/mx*100}%">${o.n?`<span class="num">${o.n}</span>`:""}</div><span class="lb">${MESI[o.m].slice(0,1).toUpperCase()}</span></div>`).join("")}</div></div>`;
+  if(sc.length){
+    const cl=["accettabile","buono","distinto","ottimo","eccellente"].map(c=>({c,n:sc.filter(x=>classe(x.s)===c).length}));
+    const mc=Math.max(1,...cl.map(x=>x.n));
+    h+=`<div class="card"><h2>Come si distribuiscono i punteggi</h2><div class="bars">${cl.map(x=>`<div class="bar"><span>${cap(x.c)}</span><div class="tr"><div class="fl" style="width:${x.n/mc*100}%"></div></div><span class="vv">${fmt(x.n,0)}</span></div>`).join("")}</div></div>`;
+    const top=[...sc].sort((a,b)=>b.s-a.s).slice(0,5);
+    h+=`<div class="card"><h2>I migliori</h2><div class="rank">${top.map((x,i)=>`<button data-open="${x.w.id}"><span class="pos">${i+1}</span><span>${esc(x.w.nome||"Senza nome")}${x.w.annata?` ${esc(x.w.annata)}`:""}<br><span style="color:var(--muted)">${esc(x.w.produttore||x.w.denominazione||"")}</span></span><b class="num" style="font-family:var(--f-display);font-size:22px">${fmt(x.s)}</b></button>`).join("")}</div></div>`;
+  }
+  const grp=(key,split)=>{ const m={}; all.forEach(w=>{ const vals=split?(w[key]||"").split(",").map(s=>s.trim()).filter(Boolean):[(w[key]||"").trim()].filter(Boolean); vals.forEach(v=>{ const k=v.toLowerCase(); m[k]=m[k]||{l:v,n:0,s:[]}; m[k].n++; const s=score(w); if(s!=null) m[k].s.push(s); }); }); return Object.values(m).sort((a,b)=>b.n-a.n).slice(0,6); };
+  const tab=(t,rows)=>rows.length?`<div class="card"><h2>${t}</h2><div class="tscroll"><table class="tbl"><thead><tr><th>Nome</th><th style="text-align:right">Vini</th><th style="text-align:right">Media</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${esc(r.l)}</td><td style="text-align:right">${fmt(r.n,0)}</td><td style="text-align:right">${r.s.length?fmt(r.s.reduce((a,b)=>a+b,0)/r.s.length):"–"}</td></tr>`).join("")}</tbody></table></div></div>`:"";
+  const col=["bianco","rosa","rosso"].map(c=>{ const ws=all.filter(w=>w.colore===c); const s=ws.map(score).filter(x=>x!=null); return {l:{bianco:"Bianchi",rosa:"Rosa",rosso:"Rossi"}[c],n:ws.length,s}; }).filter(r=>r.n);
+  h+=tab("Per colore",col)+tab("Le zone che bevi di più",grp("regione"))+tab("I vitigni che bevi di più",grp("vitigni",true));
+  return h;
+}
+
+/* ---- guida ---- */
+function viewGuida(){
+  let h=topbar("Guida");
+  h+=`<div class="guide"><div class="card"><h2>Le due schede AIS</h2>
+  <p>La <b>scheda analitico-descrittiva</b> descrive il vino con un vocabolario chiuso: dice com'è, non quanto vale. La <b>scheda a punteggio</b> traduce il giudizio in un numero su 100. Dall'ottobre 2023 entrambe seguono il nuovo libro <i>La Degustazione</i>. Se trovi termini come magro, pesante, abbastanza fresco o coefficienti per 1, per 2, per 3, stai guardando la versione vecchia.</p>
+  <p>Ogni passaggio si valuta rispetto alla <b>categoria</b> del vino: un Lambrusco si giudica come Lambrusco, non contro un Barolo.</p></div>
+  <details><summary>Come si legge la scheda descrittiva</summary><div class="bd">
+   <p>La scheda ha quattro fasi: vista, naso, bocca e considerazioni finali. Nella scheda ufficiale i termini di giudizio sono in magenta: qualità olfattiva, equilibrio, qualità gusto-olfattiva, armonia e qualità complessiva. Tutto il resto descrive, quelle righe giudicano. Nel quaderno hanno lo stesso colore.</p>
+   <p>In bocca la scheda mette in coppia una <b>morbidezza</b> e una <b>durezza</b>: dolcezza con acidità, alcolicità con tannicità, rotondità con sapidità. Dal confronto fra le due colonne nasce il giudizio di equilibrio. Nei vini con bollicine la carbonica si aggiunge alle durezze.</p>
+   <p>Le scale a cinque termini hanno spesso un gradino alto <b>caratterizzante</b> e uno estremo <b>negativo</b>: vibrante e acidulo, tenace e astringente, saporito e salato, vellutato e pastoso, molto caldo e alcolico. Il quarto termine è un pregio, il quinto un eccesso. È la trappola più frequente all'esame.</p>
+   <p>Consistenza si compila solo per i vini fermi; le voci di effervescenza solo per frizzanti e spumanti.</p></div></details>
+  <details><summary>La scheda a punteggio e il calcolo rapido</summary><div class="bd">
+   <p>Dieci voci in quattro fasi. Per ogni voce si dà un voto da 7 a 10, che si moltiplica per lo <b>scostamento</b>, cioè il peso della voce. Gli scostamenti di ogni fase sommano al suo peso, e in tutto fanno 10: per questo il massimo è 100 e il minimo 70.</p>
+   <div class="tscroll"><table class="tbl"><thead><tr><th>Fase</th><th>Voci e scostamenti</th><th style="text-align:right">Peso</th></tr></thead><tbody>${PUNTI.map(f=>`<tr><td><b>${f.fase}</b></td><td>${f.voci.map(p=>`${p.nome} ${fmt(p.s)}`).join("; ")}</td><td style="text-align:right">${fmt(f.peso,0)}%</td></tr>`).join("")}</tbody></table></div>
+   <p><b>Calcolo rapido.</b> Dando lo stesso voto a tutte le voci, il totale è quel voto per dieci: è il "valore a colonna piena" in fondo alla scheda (100, 90, 80, 70). Parti dalla colonna dove stanno quasi tutti i tuoi voti, poi per ogni voce fuori colonna aggiungi o togli lo scostamento per ogni punto di differenza.</p>
+   <p>Esempio: tutto 8, con Complessità/Attrattiva e Persistenza/Attrattiva a 9. Parti da 80 e aggiungi 1,5 due volte: 83, buono.</p>
+   <p><b>Le voci che decidono</b> sono le tre a 1,5: Complessità/Attrattiva, Persistenza/Attrattiva e Qualità/Carattere complessivo. Insieme valgono il 45% del voto. Le intensità valgono 0,5: AIS premia la qualità, non la potenza.</p></div></details>
+  <details><summary>Classi di punteggio e Guida Vitae</summary><div class="bd">
+   <div class="tscroll"><table class="tbl"><thead><tr><th>Punteggio</th><th>Classe</th><th>Vitae 2026</th></tr></thead><tbody>
+   <tr><td>70 - 79,9</td><td>Accettabile</td><td>1 vite</td></tr><tr><td>80 - 84,9</td><td>Buono</td><td>2 viti</td></tr><tr><td>85 - 89,9</td><td>Distinto</td><td>3 viti</td></tr><tr><td>90 - 93,9</td><td>Ottimo</td><td>4 viti</td></tr><tr><td>94 - 100</td><td>Eccellente</td><td>4 viti</td></tr></tbody></table></div>
+   <p>Gli aggettivi delle classi sono gli stessi della qualità nella scheda descrittiva. Scrivere "di qualità distinta" equivale a dire che il vino sta fra 85 e 89,9: descrizione e punteggio devono tornare.</p></div></details>
+  <details><summary>Come usare il quaderno in degustazione</summary><div class="bd">
+   <p>Scorri con il dito verso sinistra o destra per passare da una fase all'altra. Tieni premuto un termine per leggerne la definizione senza aprire il foglio.</p>
+   <p>In Bocca, alla voce Persistenza, c'è un cronometro: tocca quando deglutisci e di nuovo quando le sensazioni svaniscono. I secondi finiscono nella descrizione.</p>
+   <p>Una scheda lasciata completamente vuota sparisce da sola quando torni alla cantina. Dal menu in alto a destra puoi duplicare un vino per un'altra annata, condividerlo o eliminarlo.</p>
+   <p>I dati stanno solo su questo telefono. Scarica un backup ogni tanto dal menu della cantina: il file si può importare su un altro dispositivo.</p></div></details>
+  <h2 style="margin-top:20px">Ripasso dei termini</h2>`;
+  for(const f of FASI){
+    h+=`<details><summary>${f.band}</summary><div class="bd">`;
+    for(const v of f.voci){
+      const terms=v.colore?[...COLORI.bianco.map(t=>[t[0]+" (bianchi)",t[1]]),...COLORI.rosa.map(t=>[t[0]+" (rosa)",t[1]]),...COLORI.rosso.map(t=>[t[0]+" (rossi)",t[1]])]:v.t;
+      h+=`<h3 style="margin:14px 0 4px;${v.giud?"color:var(--mag)":""}">${v.nome}</h3><p>${esc(v.def)}</p><div class="termlist">${terms.map(t=>`<div><b>${esc(t[0])}</b>${esc(t[1])}</div>`).join("")}</div>`;
+    }
+    h+=`</div></details>`;
+  }
+  h+=`<div class="card src" style="margin-top:18px"><h2>Fonti</h2>
+   <p>Terminologia, scheda a punti e classi: schede ufficiali AIS distribuite al corso. Le spiegazioni di ogni termine sono scritte per lo studio e vanno confrontate con il libro <i>La Degustazione</i>.</p>
+   <p><a href="https://aisitalia.it/il-nuovo-libro-sulla-degustazione-ais/" target="_blank" rel="noopener">AIS, Il nuovo libro sulla degustazione</a><br>
+   <a href="https://aisitalia.it/wp-content/uploads/2025/10/GUIDA-2_-Criteri-Valutazione-2026.pdf" target="_blank" rel="noopener">AIS, Criteri di valutazione Guida Vitae 2026</a><br>
+   <a href="https://www.aislazio.it/cambia-la-scheda-di-degustazione/" target="_blank" rel="noopener">AIS Lazio, Cambia la scheda di degustazione</a></p>
+   <p style="color:var(--muted)">Quaderno di Degustazione, versione ${APP_VERSION}.</p></div></div>`;
+  return h;
+}
+
+/* ================== FOGLI ================== */
+function openSheet(html){
+  const had=!!$("#scrim");
+  if(had) $("#scrim").remove(); else history.pushState({...(history.state||{v:S.view}),s:1},"");
+  const d=document.createElement("div"); d.className="scrim"; d.id="scrim";
+  d.innerHTML=`<div class="sheet" role="dialog" aria-modal="true"><div class="grab"></div>${html}</div>`;
+  document.body.appendChild(d);
+  d.addEventListener("click",e=>{ if(e.target===d) closeSheet(); });
+  d.querySelectorAll("[data-sheetact]").forEach(b=>b.onclick=()=>sheetAct(b));
+  // trascina verso il basso per chiudere
+  const sh=d.firstElementChild; let y0=null;
+  sh.addEventListener("touchstart",e=>{ y0=sh.scrollTop<=0?e.touches[0].clientY:null; },{passive:true});
+  sh.addEventListener("touchmove",e=>{ if(y0==null) return; const dy=e.touches[0].clientY-y0; if(dy>0) sh.style.transform=`translateY(${dy}px)`; },{passive:true});
+  sh.addEventListener("touchend",e=>{ if(y0==null) return; const dy=e.changedTouches[0].clientY-y0; sh.style.transform=""; if(dy>90) closeSheet(); y0=null; });
+}
+function closeSheet(){ if(!$("#scrim")) return; if(history.state?.s) history.back(); else $("#scrim").remove(); }
+function infoSheet(id){
+  const v=VOCE[id], w=cur(), terms=termsOf(v,w), sel=v.multi?(w.descrittori||[]):[w.desc?.[id]];
+  openSheet(`<h2>${v.nome}</h2><p class="lead">${esc(v.def)}</p>${terms.map(t=>`<button class="opt ${sel.includes(t[0])?"on":""}" data-sheetact="pick" data-voce="${id}" data-term="${esc(t[0])}"><b>${v.colore?`<span class="sw" style="width:16px;height:16px;border-radius:50%;display:inline-block;background:${SW[t[0]]}"></span>`:""}${esc(t[0])}</b><span>${esc(t[1])}</span></button>`).join("")}<button class="btn block" data-sheetact="close">Chiudi</button>`);
+}
+function pinfoSheet(id){ const p=ALL_P.find(x=>x.id===id); openSheet(`<h2>${p.nome}</h2><p class="lead">${esc(p.def)}</p><p class="lead">Scostamento <b>${fmt(p.s)}</b>: un 9 vale ${fmt(9*p.s)} punti, un 8 ne vale ${fmt(8*p.s)}. Ogni punto di voto in più o in meno sposta il totale di ${fmt(p.s)}.</p><button class="btn block" data-sheetact="close">Chiudi</button>`); }
+function menuSheet(){ openSheet(`<h2>${esc(cur().nome||"Questo vino")}</h2><div class="actions" style="flex-direction:column">${navigator.share?`<button class="btn block" data-sheetact="share">Condividi la scheda</button>`:""}<button class="btn block" data-sheetact="dup">Duplica, per un'altra bottiglia o annata</button><button class="btn block danger" data-sheetact="askdel">Elimina il vino</button><button class="btn block" data-sheetact="close">Annulla</button></div>`); }
+function fotoSheet(){ const w=cur(); if(!w.foto) return; openSheet(`<img src="${w.foto}" alt="Etichetta" style="width:100%;border-radius:12px;margin-bottom:10px"><button class="btn block" data-sheetact="close">Chiudi</button>`); }
+function datiSheet(){
+  let inst="";
+  if(standalone()) inst=`<p class="hint">Stai usando il quaderno come app installata. Versione ${APP_VERSION}.</p>`;
+  else if(deferredInstall) inst=`<button class="btn block primary" data-sheetact="install">Installa l'app sul telefono</button>`;
+  else if(isIOS()) inst=`<h2 style="font-size:18px;margin-top:6px">Aggiungi alla schermata Home</h2><ol><li>Apri questa pagina in <b>Safari</b>.</li><li>Tocca il pulsante <b>Condividi</b> (il quadrato con la freccia in su).</li><li>Scegli <b>Aggiungi alla schermata Home</b>, poi <b>Aggiungi</b>.</li></ol><p class="hint">Da lì in poi si apre a schermo intero e funziona anche senza rete.</p>`;
+  else inst=`<h2 style="font-size:18px;margin-top:6px">Aggiungi alla schermata Home</h2><ol><li>Apri questa pagina in <b>Chrome</b>.</li><li>Tocca il menu <b>⋮</b> in alto a destra.</li><li>Scegli <b>Installa app</b> o <b>Aggiungi a schermata Home</b>.</li></ol>`;
+  openSheet(`<h2>I tuoi dati</h2><p class="lead">I vini sono salvati su questo dispositivo, ${S.mode==="idb"?"nell'archivio del browser":"nel salvataggio di riserva del browser"}. Il backup ti serve per conservarli anche fuori da qui o per portarli su un altro telefono.</p>
+  <div class="actions" style="flex-direction:column"><button class="btn block" data-sheetact="expjson">Salva o condividi il backup (.json)</button><button class="btn block" data-sheetact="expcsv">Tabella per Excel (.csv)</button><button class="btn block" data-sheetact="imp">Importa un backup, anche del vecchio quaderno</button></div>
+  ${inst}<button class="btn block" data-sheetact="close">Chiudi</button>`);
+}
+async function sheetAct(b){
+  const a=b.dataset.sheetact, w=cur();
+  if(a==="close") return closeSheet();
+  if(a==="pick"){ pick(b.dataset.voce,b.dataset.term); infoSheet(b.dataset.voce); return; }
+  if(a==="share"){ shareScheda(); return; }
+  if(a==="install"){ closeSheet(); if(deferredInstall){ deferredInstall.prompt(); deferredInstall=null; } return; }
+  if(a==="dup"){ const c={...JSON.parse(JSON.stringify(w)),id:uid(),nome:(w.nome||"")+" (copia)",data:today(),desc:{},descrittori:[],sentori:"",secondi:null,voti:{},note:"",creato:new Date().toISOString()}; S.vini.set(c.id,c); queueSave(c.id,true); closeSheet(); S.id=c.id; S.step=0; render(); scrollTo(0,0); toast("Copia creata"); return; }
+  if(a==="askdel"){ openSheet(`<h2>Eliminare ${esc(w.nome||"questo vino")}?</h2><p class="lead">La scheda, i voti e gli appunti spariscono per sempre.</p><div class="actions" style="flex-direction:column"><button class="btn block primary" data-sheetact="del" style="background:var(--danger);border-color:var(--danger)">Elimina definitivamente</button><button class="btn block" data-sheetact="close">Annulla</button></div>`); return; }
+  if(a==="del"){ const id=w.id; await removeWine(id); closeSheet(); S.view="cantina"; render(); scrollTo(0,0); toast("Vino eliminato"); return; }
+  if(a==="expjson") return exportFile("json");
+  if(a==="expcsv") return exportFile("csv");
+  if(a==="imp"){ closeSheet(); $("#fileImport").click(); }
+}
+async function shareScheda(){
+  const w=cur(); if(!w) return;
+  const text=schedaText(w);
+  try{ await navigator.share({title:w.nome||"Scheda di degustazione",text}); }
+  catch(e){ if(e?.name!=="AbortError") navigator.clipboard?.writeText(text).then(()=>toast("Scheda copiata")); }
+}
+async function saveFile(name,data,type){
+  const blob=new Blob([data],{type});
+  try{
+    const file=new File([blob],name,{type});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:name}); return true; }
+  }catch(e){ if(e?.name==="AbortError") return false; }
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; document.body.appendChild(a); a.click();
+  setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },3000); return true;
+}
+async function exportFile(kind){
+  const all=[...S.vini.values()];
+  let data,name=`quaderno-ais-${today()}.${kind}`,type;
+  if(kind==="json"){ data=JSON.stringify({versione:3,app:APP_VERSION,esportato:new Date().toISOString(),vini:all},null,1); type="application/json"; }
+  else{
+    const cols=[["nome","Nome"],["annata","Annata"],["produttore","Produttore"],["denominazione","Denominazione"],["vitigni","Vitigni"],["regione","Zona"],["colore","Colore"],["tipo","Tipologia"],["data","Data"],["prezzo","Prezzo"],["dove","Dove"]];
+    const head=[...cols.map(c=>c[1]),"Punteggio","Classe",...ALL_VOCI.map(v=>v.nome),"Sentori","Persistenza (s)",...ALL_P.map(p=>"Voto "+p.nome),"Abbinamento","Note","Appunti"];
+    const q=s=>`"${String(s??"").replace(/"/g,'""')}"`;
+    const rows=all.map(w=>{ const s=score(w); return [...cols.map(c=>w[c[0]]),s!=null?String(s).replace(".",","):"",classe(s)||"",...ALL_VOCI.map(v=>v.multi?(w.descrittori||[]).join(", "):w.desc?.[v.id]||""),w.sentori,w.secondi??"",...ALL_P.map(p=>w.voti?.[p.id]??""),w.abbinamento,w.note,w.appunti].map(q).join(";"); });
+    data="﻿"+[head.map(q).join(";"),...rows].join("\r\n"); type="text/csv";
+  }
+  const ok=await saveFile(name,data,type);
+  if(ok){ closeSheet(); toast("File pronto"); }
+}
+function mapOld(o){
+  const w={...blank(),...o};
+  if(o.tipologia&&!o.colore) w.colore=o.tipologia;
+  if(o.effervescenza&&!o.tipo) w.tipo=o.effervescenza;
+  if(o.punti&&!o.voti){ w.voti={}; for(const k in o.punti){ const v=o.punti[k]; if(v!=null) w.voti[k]=v>=70?v/10:v; } }
+  if(Array.isArray(o.famiglie)&&!o.voti){ const map={"tostato / empireumatico":"empireumatico","pasticceria / panificazione":"pasticceria/panificazione"}; w.descrittori=o.famiglie.map(f=>map[f]||f).filter(f=>VOCE.descrittori.t.some(t=>t[0]===f)); w.sentori=typeof o.descrittori==="string"?o.descrittori:""; }
+  if(!Array.isArray(w.descrittori)) w.descrittori=[];
+  if(typeof w.foto!=="string") w.foto="";
+  delete w.tipologia; delete w.effervescenza; delete w.punti; delete w.famiglie; delete w.punteggio; delete w.classe; delete w.aggiornato;
+  w.id=String(o.id||uid()).replace(/[^A-Za-z0-9_\-.~:@+]/g,"_");
+  return w;
+}
+$("#fileImport").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f) return;
+  const rd=new FileReader();
+  rd.onload=async()=>{
+    try{
+      const d=JSON.parse(rd.result); const arr=Array.isArray(d)?d:d.vini; if(!Array.isArray(arr)) throw 0;
+      for(const o of arr){ const w=mapOld(o); S.vini.set(w.id,w); dirty.add(w.id); await flush(w.id); }
+      S.view="cantina"; render(); toast(`Importati ${fmt(arr.length,0)} vini`);
+    }catch(err){ toast("Questo file non è un backup del quaderno."); }
+  };
+  rd.readAsText(f); e.target.value="";
+});
+$("#fotoIn").addEventListener("change",async e=>{
+  const f=e.target.files[0]; e.target.value=""; const w=cur(); if(!f||!w) return;
+  try{
+    const url=URL.createObjectURL(f); const img=new Image();
+    await new Promise((r,j)=>{ img.onload=r; img.onerror=j; img.src=url; });
+    const max=1200, k=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+    const c=document.createElement("canvas"); c.width=Math.round(img.naturalWidth*k); c.height=Math.round(img.naturalHeight*k);
+    c.getContext("2d").drawImage(img,0,0,c.width,c.height); URL.revokeObjectURL(url);
+    w.foto=c.toDataURL("image/jpeg",.78); queueSave(w.id,true); refreshStep(); toast("Foto salvata");
+  }catch(err){ toast("Non riesco a leggere questa immagine."); }
+});
+
+/* ================== CRONOMETRO PERSISTENZA ================== */
+const T={on:false,t0:0,iv:null};
+function timerToggle(){
+  const w=cur(); if(!w) return;
+  if(!T.on){ T.on=true; T.t0=performance.now(); buzz(10);
+    T.iv=setInterval(()=>{ const v=$("#timerV"); if(v) v.textContent=fmt((performance.now()-T.t0)/1000,1)+" s"; },100);
+    const b=$("#timerBtn"); if(b){ b.textContent="Ferma"; b.classList.add("run"); }
+  } else { clearInterval(T.iv); T.on=false; const sec=Math.round((performance.now()-T.t0)/1000); w.secondi=sec; buzz([10,40,10]); queueSave(w.id); refreshStep(); }
+}
+function timerStop(){ if(T.on){ clearInterval(T.iv); T.on=false; } }
+
+/* ================== INTERAZIONI ================== */
+function pick(id,term){
+  const w=cur(), v=VOCE[id];
+  if(v.multi){ const a=w.descrittori||[]; w.descrittori=a.includes(term)?a.filter(x=>x!==term):[...a,term]; }
+  else { w.desc=w.desc||{}; if(w.desc[id]===term) delete w.desc[id]; else w.desc[id]=term; }
+  buzz(); queueSave(w.id); refreshStep();
+}
+function refreshStep(){
+  const y=scrollY; const w=cur(); if(!w||S.view!=="vino") return;
+  $("#stepBody").innerHTML=stepBody(w);
+  $("#steps").outerHTML=stepsHtml(w);
+  const s=score(w); const r=document.querySelector(".ring"); if(r) r.innerHTML=`<b class="num">${fmt(s)}</b>${clsPill(s)}`;
+  const g=document.querySelector(".hero .glass"); const holder=g?.closest("button.photo")||g; if(holder) holder.outerHTML=glass(w,true);
+  document.querySelector(".stepbar").outerHTML=stepbar();
+  bind(); scrollTo(0,y);
+}
+function goStep(i,dir){
+  const n=Math.max(0,Math.min(STEPS.length-1,i)); if(n===S.step) return;
+  timerStop(); S.step=n; render(); scrollTo(0,0);
+  const b=document.querySelector(".steps .on"); b?.scrollIntoView({inline:"center",block:"nearest"});
+  if(dir){ const sb=$("#stepBody"); sb.classList.add(dir>0?"slide-l":"slide-r"); }
+}
+function leaveVino(){
+  timerStop();
+  const w=cur(); if(w&&isEmpty(w)) removeWine(w.id);
+  S.view="cantina"; S.id=null; S.step=0;
+}
+function go(view){
+  const st=history.state||{v:"cantina"};
+  if(view==="cantina"){ if(st.v&&st.v!=="cantina"){ history.back(); return; } S.view="cantina"; }
+  else { S.view=view; if(!st.v||st.v==="cantina") history.pushState({v:view},""); else history.replaceState({v:view},""); }
+  render(); scrollTo(0,0);
+}
+function openWine(id,step){ S.id=id; S.view="vino"; S.step=step||0; history.pushState({v:"vino"},""); render(); scrollTo(0,0); }
+addEventListener("popstate",()=>{
+  const st=history.state||{v:"cantina"};
+  if(!st.s&&$("#scrim")){ $("#scrim").remove(); if(st.v===S.view) return; }
+  if(st.v==="vino"){ if(S.vini.has(S.id)){ S.view="vino"; } else { history.back(); return; } }
+  else { if(S.view==="vino") leaveVino(); S.view=st.v||"cantina"; }
+  render(); scrollTo(0,0);
+});
+function bind(){
+  const app=$("#app");
+  app.querySelectorAll("[data-nav]").forEach(b=>b.onclick=()=>go(b.dataset.nav));
+  app.querySelectorAll("[data-open]").forEach(b=>b.onclick=()=>openWine(b.dataset.open));
+  app.querySelectorAll("[data-fc]").forEach(b=>b.onclick=()=>{ S.fc=b.dataset.fc; render(); });
+  app.querySelectorAll("[data-step]").forEach(b=>b.onclick=()=>goStep(+b.dataset.step));
+  app.querySelectorAll("[data-voce]").forEach(b=>b.onclick=()=>{ if(LP.fired){ LP.fired=false; return; } pick(b.dataset.voce,b.dataset.term); });
+  app.querySelectorAll("[data-info]").forEach(b=>b.onclick=()=>infoSheet(b.dataset.info));
+  app.querySelectorAll("[data-pinfo]").forEach(b=>b.onclick=()=>pinfoSheet(b.dataset.pinfo));
+  app.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{ const w=cur(); w.voti=w.voti||{}; const v=+b.dataset.v; if(w.voti[b.dataset.p]===v) delete w.voti[b.dataset.p]; else w.voti[b.dataset.p]=v; buzz(); queueSave(w.id); refreshStep(); });
+  app.querySelectorAll("[data-seg]").forEach(b=>b.onclick=()=>{ const w=cur(); w[b.dataset.seg]=b.dataset.val; if(b.dataset.seg==="colore"&&w.desc?.colore&&!COLORI[w.colore].some(t=>t[0]===w.desc.colore)) delete w.desc.colore; buzz(); queueSave(w.id); refreshStep(); });
+  app.querySelectorAll("[data-k]").forEach(el=>{
+    el.oninput=()=>{ const w=cur(); w[el.dataset.k]=el.value; queueSave(w.id);
+      if(el.dataset.k==="nome"||el.dataset.k==="annata"){ const h2=document.querySelector(".hero h2"); if(h2) h2.textContent=(w.nome||"Vino senza nome")+(w.annata?" "+w.annata:""); } };
+    if(el.tagName==="INPUT") el.onkeydown=e=>{ if(e.key!=="Enter") return; e.preventDefault(); const all=[...app.querySelectorAll("[data-k]")]; const nx=all[all.indexOf(el)+1]; nx?nx.focus():el.blur(); };
+  });
+  const q=$("#q"); if(q) q.oninput=()=>{ S.q=q.value; const l=$("#list"); if(l){ l.innerHTML=listHtml(); bind(); } };
+  app.querySelectorAll("[data-act]").forEach(b=>b.onclick=()=>{
+    const a=b.dataset.act;
+    if(a==="home") go("cantina");
+    else if(a==="new"){ const w=blank(); S.vini.set(w.id,w); queueSave(w.id,true); openWine(w.id); setTimeout(()=>$("#f_nome")?.focus(),80); }
+    else if(a==="prev") goStep(S.step-1,-1);
+    else if(a==="next") goStep(S.step+1,1);
+    else if(a==="menu") menuSheet();
+    else if(a==="dati") datiSheet();
+    else if(a==="nobanner"){ try{ localStorage.setItem("qd-nobanner","1"); }catch(e){} render(); }
+    else if(a==="sort"){ S.sort=S.sort==="data"?"punteggio":"data"; render(); }
+    else if(a==="resetvoti"){ const w=cur(); w.voti={}; queueSave(w.id); refreshStep(); }
+    else if(a==="copy"){ const t=descr(cur()); navigator.clipboard?.writeText(t).then(()=>toast("Descrizione copiata")).catch(()=>toast("Non riesco a copiare: seleziona il testo a mano")); }
+    else if(a==="share") shareScheda();
+    else if(a==="foto") $("#fotoIn").click();
+    else if(a==="nofoto"){ const w=cur(); w.foto=""; queueSave(w.id,true); refreshStep(); }
+    else if(a==="vedifoto") fotoSheet();
+    else if(a==="timer") timerToggle();
+  });
+}
+let toastT; function toast(m,action){
+  $("#toast")?.remove(); const t=document.createElement("div"); t.className="toast"; t.id="toast"; t.textContent=m;
+  if(action){ const b=document.createElement("button"); b.textContent=action.label; b.onclick=()=>{ t.remove(); action.fn(); }; t.appendChild(b); }
+  document.body.appendChild(t); clearTimeout(toastT); toastT=setTimeout(()=>t.remove(),action?12000:2600);
+}
+/* tooltip con il mouse; tenendo premuto sul telefono */
+let tipEl=null;
+function hideTip(){ tipEl?.remove(); tipEl=null; }
+function showTip(el){
+  hideTip(); tipEl=document.createElement("div"); tipEl.className="tip"; tipEl._for=el; tipEl.textContent=el.dataset.tip; document.body.appendChild(tipEl);
+  const r=el.getBoundingClientRect(), tw=tipEl.offsetWidth, th=tipEl.offsetHeight;
+  tipEl.style.left=Math.max(8,Math.min(innerWidth-tw-8,r.left+r.width/2-tw/2))+"px"; tipEl.style.top=(r.top-th-8<8?r.bottom+8:r.top-th-8)+"px";
+}
+if(matchMedia("(hover:hover)").matches){
+  document.addEventListener("mouseover",e=>{ const el=e.target.closest("[data-tip]"); if(!el){ hideTip(); return; } if(tipEl&&tipEl._for===el) return; showTip(el); });
+  addEventListener("scroll",hideTip,{passive:true});
+}
+const LP={t:null,fired:false};
+document.addEventListener("touchstart",e=>{ const el=e.target.closest("[data-tip]"); if(!el) return; clearTimeout(LP.t); LP.t=setTimeout(()=>{ LP.fired=true; buzz(12); showTip(el); setTimeout(hideTip,4000); },480); },{passive:true});
+document.addEventListener("touchmove",()=>clearTimeout(LP.t),{passive:true});
+document.addEventListener("touchend",()=>{ clearTimeout(LP.t); setTimeout(()=>{ LP.fired=false; },300); },{passive:true});
+document.addEventListener("contextmenu",e=>{ if(e.target.closest("[data-tip]")) e.preventDefault(); });
+/* scorri con il dito per cambiare passo */
+let sw0=null;
+document.addEventListener("touchstart",e=>{ if(S.view!=="vino"||e.touches.length!==1||e.target.closest("input,textarea,.steps,.scrim,.tscroll")){ sw0=null; return; } sw0={x:e.touches[0].clientX,y:e.touches[0].clientY,t:Date.now()}; },{passive:true});
+document.addEventListener("touchend",e=>{ if(!sw0) return; const dx=e.changedTouches[0].clientX-sw0.x, dy=e.changedTouches[0].clientY-sw0.y; const dt=Date.now()-sw0.t; sw0=null;
+  if(dt<600&&Math.abs(dx)>70&&Math.abs(dy)<50&&Math.abs(dx)>Math.abs(dy)*1.5){ if(dx<0) goStep(S.step+1,1); else goStep(S.step-1,-1); } },{passive:true});
+/* tastiera aperta: nascondo le barre fisse */
+document.addEventListener("focusin",e=>{ if(e.target.matches("input,textarea,select")) document.body.classList.add("kb"); });
+document.addEventListener("focusout",()=>{ setTimeout(()=>{ if(!document.activeElement||!document.activeElement.matches("input,textarea,select")) document.body.classList.remove("kb"); },120); });
+document.addEventListener("keydown",e=>{ if(e.key==="Escape") closeSheet(); });
+document.addEventListener("visibilitychange",()=>{ if(document.hidden){ for(const id of [...dirty]){ clearTimeout(timers[id]); flush(id); } } });
+/* installazione e aggiornamenti */
+let deferredInstall=null;
+addEventListener("beforeinstallprompt",e=>{ e.preventDefault(); deferredInstall=e; });
+addEventListener("appinstalled",()=>{ deferredInstall=null; toast("Installata: la trovi nella schermata Home"); render(); });
+if("serviceWorker" in navigator){
+  addEventListener("load",async()=>{
+    try{
+      const reg=await navigator.serviceWorker.register("./sw.js");
+      const offer=w=>toast("C'è una versione nuova del quaderno.",{label:"Aggiorna",fn:()=>w.postMessage({type:"SKIP_WAITING"})});
+      if(reg.waiting&&navigator.serviceWorker.controller) offer(reg.waiting);
+      reg.addEventListener("updatefound",()=>{ const nw=reg.installing; nw?.addEventListener("statechange",()=>{ if(nw.state==="installed"&&navigator.serviceWorker.controller) offer(nw); }); });
+      let reloading=false; navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(reloading) return; reloading=true; location.reload(); });
+    }catch(e){}
+  });
+}
+boot();
+</script>
+</body></html>
