@@ -5,8 +5,8 @@ App per il telefono che segue le due schede AIS: la scheda analitico-descrittiva
 ## Metterla online (una volta sola)
 
 1. Unisci questo branch su `main`.
-2. Su GitHub apri **Settings → Pages**.
-3. In **Build and deployment** scegli **Deploy from a branch**, branch `main`, cartella `/ (root)`, poi **Save**.
+2. Il workflow in `.github/workflows/pages.yml` attiva Pages e pubblica da solo a ogni push su `main`.
+3. Se la pubblicazione non parte, su GitHub apri **Settings → Pages** e in **Build and deployment** scegli **GitHub Actions**.
 4. Dopo un minuto l'app è su **https://metrowake.github.io/AIS/**.
 
 ## Aggiungerla alla schermata Home
