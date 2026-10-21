@@ -1,7 +1,7 @@
 /* Service worker del Quaderno di Degustazione.
    Alza VERSION a ogni modifica dei file dell'app: la pagina propone l'aggiornamento
    e, al tocco su "Aggiorna", passa alla versione nuova. */
-const VERSION = "qd-1.0.0";
+const VERSION = "qd-1.0.1";
 const CORE = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon.svg", "./icons/icon-192.png", "./icons/icon-512.png", "./icons/maskable-512.png", "./icons/apple-touch-icon.png"];
 const FONTS = "qd-fonts";
 
