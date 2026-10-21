@@ -9,7 +9,7 @@
 <meta name="theme-color" content="#111518" media="(prefers-color-scheme: dark)">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Quaderno">
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="./manifest.webmanifest">
@@ -29,7 +29,7 @@
   --lime:#6f8f22; --lime-soft:#e5efcc;
   --plum:#6e3f78; --plum-soft:#eadcef;
   --danger:#b3261e;
-  --shadow:0 1px 2px rgba(20,30,35,.06),0 6px 20px rgba(20,30,35,.07);
+  --shadow:0 1px 2px rgba(20,30,35,.06),0 4px 12px rgba(20,30,35,.07);
   --f-display:"Bodoni Moda","Didot","Bodoni 72",Georgia,serif;
   --f-body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
   --r:16px;
@@ -43,7 +43,7 @@
     --lime:#a8c95a; --lime-soft:#28321a;
     --plum:#c193cc; --plum-soft:#2f2234;
     --danger:#f08a80;
-    --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 20px rgba(0,0,0,.3);
+    --shadow:0 1px 2px rgba(0,0,0,.35),0 4px 12px rgba(0,0,0,.3);
     color-scheme:dark;
   }
 }
@@ -54,15 +54,17 @@
   --lime:#a8c95a; --lime-soft:#28321a;
   --plum:#c193cc; --plum-soft:#2f2234;
   --danger:#f08a80;
-  --shadow:0 1px 2px rgba(0,0,0,.35),0 6px 20px rgba(0,0,0,.3);
+  --shadow:0 1px 2px rgba(0,0,0,.35),0 4px 12px rgba(0,0,0,.3);
   color-scheme:dark;
 }
 *{box-sizing:border-box}
-html{-webkit-text-size-adjust:100%;background:var(--bg);overscroll-behavior-y:none;padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;overscroll-behavior-y:none;
+html{-webkit-text-size-adjust:100%;background:var(--bg);overscroll-behavior-y:contain;padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.45;overscroll-behavior-y:contain;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
-  padding-block:0 calc(76px + env(safe-area-inset-bottom,0px))}
+  padding-block:0 calc(80px + env(safe-area-inset-bottom,0px))}
+body[data-view="cantina"]{padding-bottom:calc(136px + env(safe-area-inset-bottom,0px))}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:40;background:var(--bg)}
+.nav,.stepbar,.fab,.toast{will-change:transform;transform:translateZ(0)}
 button,input,select,textarea{font:inherit;color:inherit}
 button{cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 button,.nav,.stepbar,.steps,.chips,.votes,.seg,.pill{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
@@ -135,7 +137,7 @@ img.glass{box-shadow:0 0 0 1px rgba(0,0,0,.12)}
 .hero button.photo{border:0;padding:0;background:none;flex:none}
 .ring{flex:none;text-align:center}
 .ring b{font-family:var(--f-display);font-size:28px;line-height:1;display:block}
-.steps{position:sticky;top:calc(env(safe-area-inset-top,0px) + 52px);z-index:25;background:var(--bg);display:flex;gap:5px;overflow-x:auto;padding-block:4px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.steps{position:sticky;top:calc(env(safe-area-inset-top,0px) + 54px);z-index:25;background:var(--bg);display:flex;gap:5px;overflow-x:auto;padding-block:4px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .steps::-webkit-scrollbar{display:none}
 .steps button{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:6px 11px;font-weight:600;font-size:15px;display:flex;align-items:center;gap:6px;min-height:36px}
 .steps button.on{background:var(--slate);color:var(--on-slate);border-color:var(--slate)}
@@ -284,7 +286,7 @@ details .bd{padding:0 12px 12px}
 </style>
 </head>
 <body>
-<div class="wrap" id="app" aria-live="polite">
+<div class="wrap" id="app">
   <header class="top"><h1>Cantina</h1></header>
   <div class="empty"><h2>Sto aprendo il quaderno</h2><p>I tuoi vini compaiono qui tra un istante.</p></div>
 </div>
@@ -292,7 +294,7 @@ details .bd{padding:0 12px 12px}
 <input type="file" id="fotoIn" accept="image/*" hidden>
 
 <script>
-const APP_VERSION="1.0.0";
+const APP_VERSION="1.0.1";
 /* ================== TERMINOLOGIA: SCHEDA ANALITICO-DESCRITTIVA AIS ================== */
 const SW = { // tinte indicative per i campioni di colore
   verdolino:"#dfe49a", paglierino:"#efdc7c", dorato:"#e4b947", ambrato:"#c98a32", mogano:"#6f321d",
@@ -516,7 +518,7 @@ function render(){
   else if(S.view==="diario") app.innerHTML=viewDiario();
   else if(S.view==="guida") app.innerHTML=viewGuida();
   else { S.view="cantina"; app.innerHTML=viewCantina(); }
-  app.insertAdjacentHTML("beforeend", S.view==="vino"?stepbar():nav());
+  app.insertAdjacentHTML("beforeend", S.view==="vino"?stepbar():nav()); document.body.dataset.view=S.view;
   setStatus(); bind();
 }
 function topbar(title,back){

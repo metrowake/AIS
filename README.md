@@ -29,7 +29,11 @@ Per passare a un altro telefono basta esportare il backup e importarlo dall'altr
 
 ## Aggiornare l'app
 
-Ogni volta che modifichi `index.html` o gli altri file, alza `VERSION` in `sw.js` (per esempio da `qd-1.0.0` a `qd-1.0.1`) e `APP_VERSION` in `index.html`. Al primo avvio successivo l'app mostra "C'è una versione nuova" e si aggiorna al tocco.
+Ogni volta che modifichi `index.html` o gli altri file, alza `VERSION` in `sw.js` (per esempio da `qd-1.0.1` a `qd-1.0.2`) e `APP_VERSION` in `index.html`. Al primo avvio successivo l'app mostra "C'è una versione nuova" e si aggiorna al tocco, senza rifare l'installazione.
+
+Serve rimuovere l'icona e aggiungerla di nuovo da Safari solo quando cambiano le cose che iOS legge al momento dell'installazione: i tag `apple-mobile-web-app-*`, il nome o l'icona nel manifest. Attenzione: su iPhone togliere l'icona cancella anche i dati dell'app, quindi prima scarica un backup dal menu.
+
+Nota su iOS 26: la barra di stato è impostata su `default` (opaca, nel colore dell'app). Con `black-translucent` iOS 26.1 disegna un gradiente scuro sopra la barra e lascia una striscia vuota in fondo allo schermo.
 
 ## File
 
